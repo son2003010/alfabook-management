@@ -256,56 +256,45 @@ class BookModel {
     `);
     return result.recordset
   }
-
-  static async addBook({ bookId, title, price, categoryId, publisherId, quantity, description, image, isActive = true, promotionId, authorIds}) {
+  static async addBook({ title, price, categoryId, publisherId, quantity, description, image, isActive = true, promotionId, authorIds }) {
     try {
-      const request = new sql.Request();
-      
-      request.input('BookID', sql.Int, bookId);  
-      request.input('Title', sql.NVarChar, title);
-      request.input('Price', sql.Decimal(18, 2), price);
-      request.input('CategoryID', sql.Int, categoryId);
-      request.input('PublisherID', sql.Int, publisherId);
-      request.input('Quantity', sql.Int, quantity);
-      request.input('Description', sql.NVarChar, description);
-      request.input('Image', sql.VarChar, image);
-      request.input('IsActive', sql.Bit, isActive);
-      request.input('PromotionID', sql.Int, promotionId);
-      request.input('CreatedDate', sql.DateTime, new Date());
-      request.input('UpdatedDate', sql.DateTime, new Date());
-  
-      // Kiểm tra nếu BookID đã tồn tại
-      const checkExisting = await request.query(`SELECT COUNT(*) AS count FROM Book WHERE BookID = @BookID`);
-      if (checkExisting.recordset[0].count > 0) {
-        return { success: false, message: "BookID đã tồn tại" };
-      }
-  
-      // Thêm sách vào bảng Book
-      await request.query(`
-        INSERT INTO Book (BookID, Title, CategoryID, PublisherID, Price, Quantity, Description, Image, IsActive, CreatedDate, UpdatedDate, PromotionID)
-        VALUES (@BookID, @Title, @CategoryID, @PublisherID, @Price, @Quantity, @Description, @Image, @IsActive, @CreatedDate, @UpdatedDate, @PromotionID);
-      `);
-  
-      // Thêm dữ liệu vào bảng BookAuthor
-      if (authorIds && authorIds.length > 0) {
-        for (const authorId of authorIds) {
-          await request.query(`
-            INSERT INTO BookAuthor (BookID, AuthorID) VALUES (@BookID, ${authorId});
-          `);
+        const request = new sql.Request();
+
+        request.input('Title', sql.NVarChar(255), title);
+        request.input('Price', sql.Decimal(18, 2), price);
+        request.input('CategoryID', sql.Int, categoryId);
+        request.input('PublisherID', sql.Int, publisherId);
+        request.input('Quantity', sql.Int, quantity);
+        request.input('Description', sql.NVarChar, description);
+        request.input('Image', sql.VarChar, image);
+        request.input('IsActive', sql.Bit, isActive);
+        request.input('PromotionID', sql.Int, promotionId);
+        request.input('CreatedDate', sql.DateTime, new Date());
+        request.input('UpdatedDate', sql.DateTime, new Date());
+
+        // Thêm sách vào bảng Book và lấy ID vừa tạo
+        const result = await request.query(`
+            INSERT INTO Book (Title, CategoryID, PublisherID, Price, Quantity, Description, Image, IsActive, CreatedDate, UpdatedDate, PromotionID)
+            OUTPUT INSERTED.BookID
+            VALUES (@Title, @CategoryID, @PublisherID, @Price, @Quantity, @Description, @Image, @IsActive, @CreatedDate, @UpdatedDate, @PromotionID);
+        `);
+
+        const newBookId = result.recordset[0].BookID;
+
+        // Nếu có danh sách tác giả thì thêm vào bảng BookAuthor
+        if (authorIds && authorIds.length > 0) {
+            for (const authorId of authorIds) {
+                await request.query(`
+                    INSERT INTO BookAuthor (BookID, AuthorID) VALUES (${newBookId}, ${authorId});
+                `);
+            }
         }
-      }
-  
-      return { success: true, bookId: bookId };
+
+        return { success: true, bookId: newBookId };
     } catch (error) {
-      throw new Error(`Lỗi khi thêm sách: ${error.message}`);
+        throw new Error(`Lỗi khi thêm sách: ${error.message}`);
     }
   }
-  
-  
-  
-  
-  
-  
 }
 
 export default BookModel;

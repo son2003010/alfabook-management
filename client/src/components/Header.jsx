@@ -59,6 +59,7 @@ function Header() {
     return () => clearTimeout(delayDebounce);
   }, [searchTerm]);
   const handleLogout = () => {
+    clearCart()
     logout();
     setShowDropdown(false);
     navigate('/');
@@ -348,9 +349,13 @@ function Header() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                     </svg>
                   </div>
-                  <span className="text-xs text-gray-700 group-hover:text-red-500 transition-colors duration-200">
-                    {isLoggedIn ? user?.phone : 'Tài Khoản'}
+                  <span 
+                    className="text-xs text-gray-700 group-hover:text-red-500 transition-colors duration-200" 
+                    title={isLoggedIn ? user?.email : 'Tài Khoản'}>
+                    {isLoggedIn ? user?.email.split("@")[0] : 'Tài Khoản'}
                   </span>
+
+
                 </div>
 
                 {isLoggedIn && showDropdown && (

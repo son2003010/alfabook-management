@@ -124,7 +124,7 @@ const LoginPage = ({ isOpen, onClose }) => {
       return;
     }
 
-    const endpoint = isLogin ? 'api/login' : 'api/register';
+    const endpoint = isLogin ? 'http://localhost:3001/api/login' : 'http://localhost:3001/api/register';
     const data = { email, password };
 
     setLoading(true);

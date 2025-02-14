@@ -98,7 +98,10 @@ const AdminUser = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center text-sm text-gray-500 mt-1">
-                    <Phone className="w-4 h-4 mr-1" /> {user.Phone}
+                    <Phone className="w-4 h-4 mr-1" /> {user.Phone} 
+                  </div>
+                  <div className="flex items-center text-sm text-gray-500 mt-1">
+                    <Mail className="w-4 h-4 mr-1" /> {user.Email} 
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

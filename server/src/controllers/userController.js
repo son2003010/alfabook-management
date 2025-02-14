@@ -47,14 +47,6 @@ export const registerUser = async (req, res) => {
   const { email, password, otp } = req.body;
 
   try {
-    // // Xác minh OTP qua email
-    // const validOTP = await OTPModel.verifyOTP(email, otp);
-    // if (!validOTP) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: 'Mã OTP không hợp lệ hoặc đã hết hạn.'
-    //   });
-    // }
 
     // Hash mật khẩu
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -62,8 +54,6 @@ export const registerUser = async (req, res) => {
     // Tạo user mới
     const result = await UserModel.createUser({ email, hashedPassword });
 
-    // Xóa OTP sau khi sử dụng
-    // await OTPModel.deleteOTP(email);
 
     return res.status(201).json({
       success: true,
@@ -145,7 +135,7 @@ export const loginUser = async (req, res) => {
       message: 'Đăng nhập thành công!',
       data: {
         userId: user.UserID,
-        phone: user.Phone,
+        email: user.Email,
         roleId: user.RoleID
       }
     });

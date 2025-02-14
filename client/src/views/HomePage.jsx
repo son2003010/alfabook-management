@@ -5,9 +5,11 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 // Import hình ảnh banner
 import banner_slide_1 from '../assets/banner_slide_1.png';
 import banner_slide_2 from '../assets/banner_slide_2.png';
-import banner_right from '../assets/banner_right.png';
 
 import tieuthuyet from '../assets/tieuthuyet.png';
+import manga from '../assets/manga.png';
+
+
 function HomePage() {
   // State management
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -18,6 +20,34 @@ function HomePage() {
 
   const navigate = useNavigate();
   const slides = [banner_slide_1, banner_slide_2];
+  const mockCategories = [
+    {
+      CategoryID: 1,
+      CategoryName: "Tiểu Thuyết",
+      image: tieuthuyet
+    },
+    {
+      CategoryID: 2,
+      CategoryName: "Marketing",
+      image: tieuthuyet
+    },
+    {
+      CategoryID: 3,
+      CategoryName: "Tâm Lý",
+      image: tieuthuyet
+    },
+    {
+      CategoryID: 4,
+      CategoryName: "Manga - Comic",
+      image: manga
+    },
+    {
+      CategoryID: 5,
+      CategoryName: "Câu chuyện cuộc đời",
+      image: tieuthuyet
+    },
+  ];
+  
   const booksPerPage = 20; // Số sách mỗi danh mục hiển thị
 
   // Fetch danh sách categories khi component mount
@@ -204,25 +234,25 @@ function HomePage() {
 
       {/* Categories Section */}
       <section className="py-10">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-5 gap-4">
-            {categories.map((category) => (
-              <div
-                key={category.CategoryID}
-                onClick={() => handleCategoryClick(category.CategoryID)}
-                className="flex flex-col items-center bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 cursor-pointer"
-              >
-                <img
-                  src= {tieuthuyet} // Đường dẫn ảnh từ dữ liệu của danh mục
-                  alt={category.CategoryName} // Alt text hiển thị nếu ảnh không tải được
-                  className="w-12 h-12 rounded-full mb-2 object-cover" // Class cho style
-                />
-                <span className="text-sm text-gray-700">{category.CategoryName}</span>
-              </div>
-            ))}
-          </div>
+      <div className="container mx-auto px-4">
+        <div className="grid grid-cols-5 gap-4">
+          {mockCategories.map((category) => (
+            <div
+              key={category.CategoryID}
+              onClick={() => handleCategoryClick(category.CategoryID)}
+              className="flex flex-col items-center bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 cursor-pointer"
+            >
+              <img
+                src={category.image}
+                alt={category.CategoryName}
+                className="w-12 h-12 rounded-full mb-2 object-cover"
+              />
+              <span className="text-sm text-gray-700">{category.CategoryName}</span>
+            </div>
+          ))}
         </div>
-      </section>
+      </div>
+    </section>
 
       {/* Books by Category Sections */}
       {categories.map((category) => (

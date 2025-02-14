@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Search, Filter } from 'lucide-react';
 
 const AdminOrder = () => {
-  // Mock data for demonstration
   const [orders, setOrders] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]); // Chỉ lưu kết quả tìm kiếm
-  const [selectedStatus, setSelectedStatus] = useState(""); // Chỉ lọc trạng thái
-  
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedStatus, setSelectedStatus] = useState("");
+
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -24,24 +23,25 @@ const AdminOrder = () => {
 
     fetchOrders();
   }, []);
+
   const handleSearch = async () => {
     if (!searchQuery) {
-        setSearchResults([]); // Nếu rỗng thì reset kết quả tìm kiếm
-        return;
+      setSearchResults([]);
+      return;
     }
 
     try {
-        const response = await fetch(`/api/search-orders?query=${searchQuery}`);
-        if (!response.ok) throw new Error("Lỗi khi tìm kiếm đơn hàng");
-        const data = await response.json();
-        setSearchResults(data);
+      const response = await fetch(`/api/search-orders?query=${searchQuery}`);
+      if (!response.ok) throw new Error("Lỗi khi tìm kiếm đơn hàng");
+      const data = await response.json();
+      setSearchResults(data);
     } catch (error) {
-        console.error("Lỗi:", error);
+      console.error("Lỗi:", error);
     }
-};
+  };
 
   const getOrderStatusStyles = (status) => {
-    switch(status) {
+    switch (status) {
       case 'Chờ xác nhận':
         return 'bg-yellow-50 text-yellow-700';
       case 'Đang chuẩn bị hàng':
@@ -59,11 +59,11 @@ const AdminOrder = () => {
         return 'bg-gray-50 text-gray-700';
     }
   };
-  
+
   const getOrderStatusLabel = (status) => {
-    switch(status) {
+    switch (status) {
       case 'Chờ xác nhận':
-        return 'Chờ xác nhận'; // Có thể sử dụng icon từ lucide-react
+        return 'Chờ xác nhận';
       case 'Đang chuẩn bị hàng':
         return 'Đang chuẩn bị hàng';
       case 'Đang vận chuyển':
@@ -80,24 +80,24 @@ const AdminOrder = () => {
         return null;
     }
   };
+
   const filterOrdersByStatus = (ordersList) => {
     return selectedStatus ? ordersList.filter(order => order.Status === selectedStatus) : ordersList;
-};
+  };
 
-  const displayedOrders = searchResults.length > 0 
-  ? searchResults // Nếu có kết quả tìm kiếm, bỏ qua bộ lọc trạng thái
-  : filterOrdersByStatus(orders); // Nếu không có tìm kiếm, lọc trạng thái
-  
+  const displayedOrders = searchResults.length > 0
+    ? searchResults
+    : filterOrdersByStatus(orders);
+
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN').format(price);
   };
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Quản lý đơn hàng</h1>
-      
-      {/* Search and Filter */}
+
       <div className="flex gap-4 items-center w-full">
-        {/* Ô nhập tìm kiếm */}
         <div className="flex-1 relative">
           <Search className="w-5 h-4 absolute left-3 top-2.5 text-gray-400" />
           <input
@@ -110,16 +110,14 @@ const AdminOrder = () => {
           />
         </div>
 
-        {/* Nút tìm kiếm */}
-        <button 
+        <button
           onClick={handleSearch}
           className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 whitespace-nowrap"
         >
           Tìm kiếm
         </button>
 
-        {/* Dropdown chọn trạng thái */}
-        <select 
+        <select
           className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
@@ -133,8 +131,6 @@ const AdminOrder = () => {
         </select>
       </div>
 
-
-      {/* Orders Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -157,15 +153,14 @@ const AdminOrder = () => {
                 <td className="px-6 py-4 whitespace-nowrap">{order.OrderDate}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{formatPrice(order.TotalPrice)} VND</td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 rounded-full text-xm ${getOrderStatusStyles(order.Status)}`}>
+                  <span className={`px-2 py-1 rounded-full text-sm ${getOrderStatusStyles(order.Status)}`}>
                     {getOrderStatusLabel(order.Status)}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">{order.PaymentMethod}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">{order.PaymentMethod}</td>
               </tr>
             ))}
           </tbody>
-
         </table>
       </div>
     </div>
