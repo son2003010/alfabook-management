@@ -1,23 +1,23 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Mail, Phone, MoreVertical, UserPlus, Filter, Edit, Trash2, Lock } from 'lucide-react';
 
 const AdminUser = () => {
-  // Mock data for demonstration
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const response = await fetch('/api/get-user');
-          if (!response.ok) {
-            throw new Error('Lỗi khi lấy dữ liệu');
-          }
-          const data = await response.json();
-          setUsers(data);
+        if (!response.ok) {
+          throw new Error('Lỗi khi lấy dữ liệu');
+        }
+        const data = await response.json();
+        setUsers(data);
       } catch (error) {
         console.error('Lỗi fetch:', error);
       }
     };
+
     fetchUsers();
   }, []);
 
@@ -41,7 +41,6 @@ const AdminUser = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header section */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Quản lý người dùng</h1>
         <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700">
@@ -50,7 +49,6 @@ const AdminUser = () => {
         </button>
       </div>
 
-      {/* Search and Filter section */}
       <div className="flex gap-4">
         <div className="flex-1 relative">
           <Search className="w-5 h-5 absolute left-3 top-2.5 text-gray-400" />
@@ -68,7 +66,6 @@ const AdminUser = () => {
         </select>
       </div>
 
-      {/* Users Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -98,10 +95,10 @@ const AdminUser = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center text-sm text-gray-500 mt-1">
-                    <Phone className="w-4 h-4 mr-1" /> {user.Phone} 
+                    <Phone className="w-4 h-4 mr-1" /> {user.Phone}
                   </div>
                   <div className="flex items-center text-sm text-gray-500 mt-1">
-                    <Mail className="w-4 h-4 mr-1" /> {user.Email} 
+                    <Mail className="w-4 h-4 mr-1" /> {user.Email}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -129,7 +126,6 @@ const AdminUser = () => {
           </tbody>
         </table>
 
-        {/* Pagination */}
         <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
           <div className="flex items-center justify-between">
             <div className="flex-1 flex justify-between sm:hidden">

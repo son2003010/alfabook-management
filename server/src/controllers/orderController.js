@@ -60,12 +60,13 @@ export const getOrderById = async (req, res) => {
 
 export const updateOrderStatus = async (req, res) => {
   try {
+    const {orderId} = req.params
     const { status } = req.body;
     if (!status) {
       return res.status(400).json({ error: 'Status is required' });
     }
 
-    const success = await OrderModel.updateOrderStatus(req.params.orderId, status);
+    await OrderModel.updateOrderStatus(orderId, status);
     res.status(200).json({ 
       message: 'Order status updated successfully' 
     });

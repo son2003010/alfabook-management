@@ -200,7 +200,6 @@ export const loginAdmin = async (req, res) => {
 export const getUsers = async (req, res) => {
   try {
       const users = await UserModel.getUsers();
-      console.log(users)
       res.json(users);
   } catch (error) {
       res.status(500).json({ error: "Lỗi khi lấy danh sách người dùng", details: error.message });

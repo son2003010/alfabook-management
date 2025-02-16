@@ -239,6 +239,7 @@ const LoginPage = ({ isOpen, onClose }) => {
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading || (isOTPSent && !isLogin)}
             />
+            
           </div>
 
           {!isLogin && isOTPSent && !isOTPVerified && (

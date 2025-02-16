@@ -10,7 +10,11 @@ const AdminDashboard = () => {
   });
 
   const [salesData, setSalesData] = useState([]); // Dữ liệu cho biểu đồ
+  const [userStats, setUserStats] = useState({ totalUsersToday: 0, totalUsersYesterday: 0 });
+  const [orderStats, setOrderStats] = useState({ totalOrdersToday: 0, totalOrdersYesterday: 0 });
+  const [revenueStats, setRevenueStats] = useState({ revenueThisMonth: 0, revenueLastMonth: 0 });
 
+  
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -35,16 +39,38 @@ const AdminDashboard = () => {
 
       // Cập nhật state với dữ liệu thực tế
       setStats({
-        revenue: `${revenueData.totalRevenue.toLocaleString()} VND`,
-        newOrders: ordersData.newOrders,
-        newUsers: usersData.newUsers,
+        revenue: `${revenueData.revenueThisMonth.toLocaleString()} VND`,
+        newOrders: ordersData.totalOrdersToday,
+        newUsers: usersData.totalUsersToday,
       });
-
+      setRevenueStats({
+        revenueThisMonth: revenueData.revenueThisMonth,
+        revenueLastMonth: revenueData.revenueLastMonth,
+      });
+      setOrderStats({
+        totalOrdersToday: ordersData.totalOrdersToday,
+        totalOrdersYesterday: ordersData.totalOrdersYesterday,
+      });
+      setUserStats({
+        totalUsersToday: usersData.totalUsersToday,
+        totalUsersYesterday: usersData.totalUsersYesterday,
+      });
       setSalesData(chartData.salesByMonth || []); // Cập nhật dữ liệu biểu đồ
     } catch (error) {
       console.error('Lỗi khi lấy dữ liệu dashboard:', error);
     }
   };
+  const userGrowth = userStats.totalUsersYesterday > 0
+  ? ((userStats.totalUsersToday - userStats.totalUsersYesterday) / userStats.totalUsersYesterday * 100).toFixed(2)
+  : userStats.totalUsersToday > 0 ? 100 : 0;
+
+  const orderGrowth = orderStats.totalOrdersYesterday > 0 
+  ? ((orderStats.totalOrdersToday - orderStats.totalOrdersYesterday) / orderStats.totalOrdersYesterday * 100).toFixed(2)
+  : orderStats.totalOrdersToday > 0 ? 100 : 0;
+
+  const revenueGrowth = revenueStats.revenueLastMonth === 0 
+  ? ((revenueStats.revenueThisMonth - revenueStats.revenueLastMonth) / revenueStats.revenueLastMonth * 100).toFixed(2)
+  : revenueStats.revenueThisMonth > 0 ? 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -53,9 +79,47 @@ const AdminDashboard = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
-          { title: 'Doanh thu tháng', value: stats.revenue, icon: Wallet },
-          { title: 'Đơn hàng mới', value: stats.newOrders, icon: ShoppingBag },
-          { title: 'Khách hàng mới', value: stats.newUsers, icon: Users },
+          {
+            title: 'Doanh thu tháng',
+            value: (
+              <>
+                {stats.revenue}
+                <span className={`text-sm ${revenueGrowth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  <span className="mr-1">{revenueGrowth >= 0 ? '▲' : '▼'}</span> 
+                  ({revenueGrowth}%)
+                </span>
+              </>
+            ),
+            icon: Wallet,
+          },
+          {
+            title: 'Đơn hàng mới',
+            value: (
+              <>
+                {stats.newOrders} {/* Hiển thị số đơn hàng mới hôm nay */}
+                <span className={`text-sm ${orderGrowth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  <span className="mr-1">{orderGrowth >= 0 ? '▲' : '▼'}</span> 
+                  ({orderGrowth}%)
+                </span>
+              </>
+            ),
+            icon: ShoppingBag,
+          },
+
+          {
+            title: 'Khách hàng mới',
+            value: (
+                <>
+                    {stats.newUsers} {/* Số khách hàng mới hôm nay */}
+                    <span className={`text-sm ${userGrowth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    <span className="mr-1">{userGrowth >= 0 ? '▲' : '▼'}</span> 
+                    ({userGrowth}%)                    </span>
+                </>
+            ),
+            icon: Users,
+        }
+        
+          
         ].map((stat, index) => (
           <div key={index} className="bg-white p-4 rounded-lg shadow-sm">
             <div className="flex items-center justify-between">

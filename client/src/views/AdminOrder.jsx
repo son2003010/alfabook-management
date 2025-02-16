@@ -1,11 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, Edit, Phone } from 'lucide-react';
 
 const AdminOrder = () => {
   const [orders, setOrders] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState("");
+  const [editingOrder, setEditingOrder] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const statusOptions = [
+    'Chờ xác nhận',
+    'Đang chuẩn bị hàng',
+    'Đang vận chuyển',
+    'Đang giao hàng',
+    'Đã giao hàng',
+    'Đang hoàn hàng',
+    'Hoàn hàng thành công'
+  ];
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -23,6 +35,30 @@ const AdminOrder = () => {
 
     fetchOrders();
   }, []);
+  
+  const handleUpdateStatus = async (orderId, newStatus) => {
+    try {
+      const response = await fetch(`/api/update-status/${orderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) throw new Error('Lỗi khi cập nhật trạng thái');
+
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.OrderID === orderId ? { ...order, Status: newStatus } : order
+        )
+      );
+
+      setIsEditModalOpen(false);
+      setEditingOrder(null);
+    } catch (error) {
+      console.error('Lỗi:', error);
+      alert('Không thể cập nhật trạng thái!');
+    }
+  };
 
   const handleSearch = async () => {
     if (!searchQuery) {
@@ -123,7 +159,7 @@ const AdminOrder = () => {
           onChange={(e) => setSelectedStatus(e.target.value)}
         >
           <option value="">Tất cả trạng thái</option>
-          {[...new Set(orders.map((order) => order.Status))].map((status) => (
+          {statusOptions.map((status) => (
             <option key={status} value={status}>
               {status}
             </option>
@@ -131,25 +167,30 @@ const AdminOrder = () => {
         </select>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã đơn</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Khách hàng</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số Điện Thoại</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày đặt</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thanh toán</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {displayedOrders.map((order) => (
-              <tr key={order.OrderID} className="hover:bg-gray-50 cursor-pointer">
+              <tr key={order.OrderID} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap font-medium">{order.OrderID}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{order.ReceiverName}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{order.ReceiverPhone}</td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center text-sm text-gray-500 mt-1">
+                    <Phone className="w-4 h-4 mr-1" /> {order.ReceiverPhone}
+                  </div>
+                  {order.ReceiverName}
+                </td>
+                {/* <td className="px-6 py-4 whitespace-nowrap">{order.ReceiverPhone}</td> */}
                 <td className="px-6 py-4 whitespace-nowrap">{order.OrderDate}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{formatPrice(order.TotalPrice)} VND</td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -158,11 +199,60 @@ const AdminOrder = () => {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">{order.PaymentMethod}</td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <button
+                    onClick={() => {
+                      setEditingOrder(order);
+                      setIsEditModalOpen(true);
+                    }}
+                    className="p-1 text-blue-500 hover:bg-blue-50 rounded inline-flex items-center"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h2 className="text-lg font-semibold mb-4">
+              Cập nhật trạng thái đơn hàng #{editingOrder?.OrderID}
+            </h2>
+            <select
+              className="w-full border rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={editingOrder?.Status || ''}
+              onChange={(e) => setEditingOrder(prev => ({ ...prev, Status: e.target.value }))}
+            >
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setEditingOrder(null);
+                }}
+              >
+                Hủy
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                onClick={() => handleUpdateStatus(editingOrder.OrderID, editingOrder.Status)}
+              >
+                Cập nhật
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

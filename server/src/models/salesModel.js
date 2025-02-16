@@ -4,27 +4,32 @@ class SalesModel {
     static async getRevenuePayment() {
         const request = new sql.Request();
         const result = await request.query(`
-            SELECT SUM(Amount) AS totalRevenue FROM Payment
+            SELECT 
+                (SELECT SUM(Amount) FROM Payment WHERE YEAR(PaymentDate) = YEAR(GETDATE()) AND MONTH(PaymentDate) = MONTH(GETDATE())) AS revenueThisMonth,
+                (SELECT SUM(Amount) FROM Payment WHERE YEAR(PaymentDate) = YEAR(GETDATE()) AND MONTH(PaymentDate) = MONTH(DATEADD(MONTH, -1, GETDATE()))) AS revenueLastMonth
         `);
-        return result.recordset[0]; // Trả về một object chứa tổng doanh thu
+        return result.recordset[0]; 
     }
+    
+    
     static async getNewOrders() {
         const request = new sql.Request();
         const result = await request.query(`
-            SELECT COUNT(OrderID) AS newOrders 
-            FROM [Order] 
-            WHERE OrderDate >= DATEADD(DAY, -30, GETDATE())
+            SELECT 
+                (SELECT COUNT(OrderID) FROM [Order] WHERE CAST(OrderDate AS DATE) = CAST(GETDATE() AS DATE)) AS totalOrdersToday,
+                (SELECT COUNT(OrderID) FROM [Order] WHERE CAST(OrderDate AS DATE) = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)) AS totalOrdersYesterday
         `);
-        return result.recordset[0]; // Trả về số đơn hàng mới
+        return result.recordset[0]; 
     }
+    
     static async getNewUsers() {
         const request = new sql.Request();
         const result = await request.query(`
-            SELECT COUNT(UserID) AS newUsers 
-            FROM [User] 
-            WHERE CreatedDate >= DATEADD(DAY, -30, GETDATE())
+            SELECT 
+                (SELECT COUNT(UserID) FROM [User]) AS totalUsersToday,
+                (SELECT COUNT(UserID) FROM [User] WHERE CreatedDate < CAST(GETDATE() AS DATE)) AS totalUsersYesterday
         `);
-        return result.recordset[0]; // Trả về số đơn hàng mới
+        return result.recordset[0]; // Trả về tổng số khách hàng hôm nay và hôm qua
       }
     static async getSalesByMonth() {
         const request = new sql.Request();
