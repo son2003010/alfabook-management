@@ -14,7 +14,7 @@ export const sendRegistrationOTP = async (req, res) => {
     // Kiểm tra email đã đăng ký chưa
     const userExists = await UserModel.checkEmailExists(email);
     if (userExists) {
-      return res.status(409).json({
+      return res.status(400).json({
         success: false,
         message: 'Email đã được đăng ký.'
       });

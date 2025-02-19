@@ -9,13 +9,17 @@ class BookModel {
     const result = await request
       .query(
         `SELECT 
-          b.*,
-          c.CategoryName,
-          p.PublisherName,
-          a.AuthorName,
-          pr.Discount,
+          b.*, 
+          c.CategoryName, 
+          p.PublisherName, 
+          a.AuthorName, 
           pr.StartDate as PromotionStartDate,
-          pr.EndDate as PromotionEndDate
+          pr.EndDate as PromotionEndDate,
+          CASE 
+            WHEN pr.PromotionID IS NOT NULL AND GETDATE() BETWEEN pr.StartDate AND pr.EndDate 
+            THEN pr.Discount 
+            ELSE 0 
+          END AS Discount
         FROM Book b
         LEFT JOIN Category c ON b.CategoryID = c.CategoryID
         LEFT JOIN Publisher p ON b.PublisherID = p.PublisherID
@@ -38,7 +42,12 @@ class BookModel {
       request.input('offset', sql.Int, offset);
       request.input('pageSize', sql.Int, pageSize);
       const result = await request.query(`
-        SELECT b.*, c.CategoryName, p.Discount, p.StartDate, p.EndDate
+        SELECT b.*, c.CategoryName,
+        CASE 
+            WHEN p.PromotionID IS NOT NULL AND GETDATE() BETWEEN p.StartDate AND p.EndDate 
+            THEN p.Discount 
+            ELSE 0 
+        END AS Discount
         FROM Book b
         LEFT JOIN dbo.Category c ON b.CategoryID = c.CategoryID
         LEFT JOIN dbo.Promotion p ON b.PromotionID = p.PromotionID
@@ -69,36 +78,37 @@ class BookModel {
     
     let query = `
       SELECT 
-        BookID,
-        Title,
-        Price,
-        Image,
+        b.BookID,
+        b.Title,
+        b.Price,
+        b.Image,
         CASE 
-          WHEN PromotionID IS NOT NULL THEN
-            (SELECT TOP 1 Discount FROM Promotion WHERE PromotionID = Book.PromotionID)
+          WHEN p.PromotionID IS NOT NULL AND GETDATE() BETWEEN p.StartDate AND p.EndDate 
+          THEN p.Discount
           ELSE 0
         END as Discount
-      FROM Book
-      WHERE CategoryID = @categoryId
-      AND IsActive = 1
+      FROM Book b
+      LEFT JOIN Promotion p ON b.PromotionID = p.PromotionID
+      WHERE b.CategoryID = @categoryId
+      AND b.IsActive = 1
     `;
 
-    // Thêm sắp xếp
+    // Add sorting
     switch (sortBy) {
       case 'price-asc':
-        query += ' ORDER BY Price ASC';
+        query += ' ORDER BY b.Price ASC';
         break;
       case 'price-desc':
-        query += ' ORDER BY Price DESC';
+        query += ' ORDER BY b.Price DESC';
         break;
       case 'newest':
-        query += ' ORDER BY CreatedDate DESC';
+        query += ' ORDER BY b.CreatedDate DESC';
         break;
       default:
-        query += ' ORDER BY CreatedDate DESC';
+        query += ' ORDER BY b.CreatedDate DESC';
     }
 
-    // Thêm phân trang
+    // Add pagination
     query += ' OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY';
 
     request.input('categoryId', sql.Int, categoryId);
@@ -107,7 +117,7 @@ class BookModel {
 
     const result = await request.query(query);
 
-    // Lấy tổng số sách
+    // Get total count
     const countRequest = new sql.Request();
     countRequest.input('categoryId', sql.Int, categoryId);
     const countResult = await countRequest.query(
@@ -133,33 +143,34 @@ class BookModel {
     
     let query = `
       SELECT 
-        BookID,
-        Title,
-        Price,
-        Image,
+        b.BookID,
+        b.Title,
+        b.Price,
+        b.Image,
         CASE 
-          WHEN PromotionID IS NOT NULL THEN 
-            (SELECT TOP 1 Discount FROM Promotion WHERE PromotionID = Book.PromotionID)
+          WHEN p.PromotionID IS NOT NULL AND GETDATE() BETWEEN p.StartDate AND p.EndDate 
+          THEN p.Discount
           ELSE 0
         END AS Discount,
-        (Price * (1 - 
+        (b.Price * (1 - 
           CASE 
-            WHEN PromotionID IS NOT NULL THEN 
-              (SELECT TOP 1 Discount FROM Promotion WHERE PromotionID = Book.PromotionID) / 100.0
+            WHEN p.PromotionID IS NOT NULL AND GETDATE() BETWEEN p.StartDate AND p.EndDate 
+            THEN p.Discount / 100.0
             ELSE 0 
           END
         )) AS FinalPrice
-      FROM Book
-      WHERE CategoryID = @categoryId
-      AND IsActive = 1
+      FROM Book b
+      LEFT JOIN Promotion p ON b.PromotionID = p.PromotionID
+      WHERE b.CategoryID = @categoryId
+      AND b.IsActive = 1
     `;
 
-    // ✅ **Thêm điều kiện lọc giá theo FinalPrice**
+    // Add price filter conditions
     if (minPrice !== null) {
-      query += ` AND (Price * (1 - 
+      query += ` AND (b.Price * (1 - 
                         CASE 
-                          WHEN PromotionID IS NOT NULL THEN 
-                            (SELECT TOP 1 Discount FROM Promotion WHERE PromotionID = Book.PromotionID) / 100.0
+                          WHEN p.PromotionID IS NOT NULL AND GETDATE() BETWEEN p.StartDate AND p.EndDate 
+                          THEN p.Discount / 100.0
                           ELSE 0 
                         END
                       )) >= @minPrice`;
@@ -167,17 +178,17 @@ class BookModel {
     }
 
     if (maxPrice !== null) {
-      query += ` AND (Price * (1 - 
+      query += ` AND (b.Price * (1 - 
                         CASE 
-                          WHEN PromotionID IS NOT NULL THEN 
-                            (SELECT TOP 1 Discount FROM Promotion WHERE PromotionID = Book.PromotionID) / 100.0
+                          WHEN p.PromotionID IS NOT NULL AND GETDATE() BETWEEN p.StartDate AND p.EndDate 
+                          THEN p.Discount / 100.0
                           ELSE 0 
                         END
                       )) <= @maxPrice`;
       request.input('maxPrice', sql.Decimal(10, 2), maxPrice);
     }
 
-    // ✅ **Thêm sắp xếp**
+    // Add sorting
     switch (sortBy) {
       case 'price-asc':
         query += ' ORDER BY FinalPrice ASC';
@@ -186,13 +197,13 @@ class BookModel {
         query += ' ORDER BY FinalPrice DESC';
         break;
       case 'newest':
-        query += ' ORDER BY CreatedDate DESC';
+        query += ' ORDER BY b.CreatedDate DESC';
         break;
       default:
-        query += ' ORDER BY CreatedDate DESC';
+        query += ' ORDER BY b.CreatedDate DESC';
     }
 
-    // ✅ **Thêm phân trang (ĐẢM BẢO LUÔN CÓ ORDER BY TRƯỚC OFFSET)**
+    // Add pagination
     query += ' OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY';
 
     request.input('categoryId', sql.Int, categoryId);
@@ -201,29 +212,34 @@ class BookModel {
 
     const result = await request.query(query);
 
-    // ✅ **Lấy tổng số sách thỏa mãn điều kiện lọc**
+    // Get total count with price filter
     let countQuery = `
       SELECT COUNT(*) as total 
-      FROM Book 
-      WHERE CategoryID = @categoryId
-      AND IsActive = 1
+      FROM Book b
+      LEFT JOIN Promotion p ON b.PromotionID = p.PromotionID
+      WHERE b.CategoryID = @categoryId
+      AND b.IsActive = 1
     `;
 
-    if (minPrice !== null) countQuery += ` AND (Price * (1 - 
+    if (minPrice !== null) {
+      countQuery += ` AND (b.Price * (1 - 
                         CASE 
-                          WHEN PromotionID IS NOT NULL THEN 
-                            (SELECT TOP 1 Discount FROM Promotion WHERE PromotionID = Book.PromotionID) / 100.0
+                          WHEN p.PromotionID IS NOT NULL AND GETDATE() BETWEEN p.StartDate AND p.EndDate 
+                          THEN p.Discount / 100.0
                           ELSE 0 
                         END
                       )) >= @minPrice`;
+    }
 
-    if (maxPrice !== null) countQuery += ` AND (Price * (1 - 
+    if (maxPrice !== null) {
+      countQuery += ` AND (b.Price * (1 - 
                         CASE 
-                          WHEN PromotionID IS NOT NULL THEN 
-                            (SELECT TOP 1 Discount FROM Promotion WHERE PromotionID = Book.PromotionID) / 100.0
+                          WHEN p.PromotionID IS NOT NULL AND GETDATE() BETWEEN p.StartDate AND p.EndDate 
+                          THEN p.Discount / 100.0
                           ELSE 0 
                         END
                       )) <= @maxPrice`;
+    }
 
     const countRequest = new sql.Request();
     countRequest.input('categoryId', sql.Int, categoryId);
@@ -241,7 +257,7 @@ class BookModel {
         limit: Number(limit),
         totalPages: Math.max(1, Math.ceil(total / limit))
       }
-    };
+    };  
 }
 
   static async searchBooks(query) {

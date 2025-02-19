@@ -1,228 +1,234 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { X, CheckCircle2, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 const LoginPage = ({ isOpen, onClose }) => {
   const { login } = useAuth();
-  const [isLogin, setIsLogin] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [otp, setOtp] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [showSuccessIcon, setShowSuccessIcon] = useState(false);
-  const [isOTPSent, setIsOTPSent] = useState(false);
-  const [isOTPVerified, setIsOTPVerified] = useState(false);
-  
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const [formState, setFormState] = useState({
+    isLogin: true,
+    showPassword: false,
+    email: '',
+    password: '',
+    otp: '',
+    loading: false,
+    error: '',
+    successMessage: '',
+    showSuccessIcon: false,
+    isOTPSent: false,
+    isOTPVerified: false
+  });
+
   if (!isOpen) return null;
 
   const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Kiểm tra email hợp lệ
-    return emailRegex.test(email);
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormState(prev => ({ ...prev, [name]: value }));
+  };
+
+  const showNotification = (message, isError = false) => {
+    setFormState(prev => ({
+      ...prev,
+      error: isError ? message : '',
+      successMessage: !isError ? message : '',
+      showSuccessIcon: !isError
+    }));
+
+    if (!isError) {
+      setTimeout(() => {
+        setFormState(prev => ({
+          ...prev,
+          showSuccessIcon: false,
+          successMessage: ''
+        }));
+      }, 3000);
+    }
   };
 
   const handleSendOTP = async () => {
-    if (!validateEmail(email)) {
-      setError("Email không hợp lệ!");
+    if (!validateEmail(formState.email)) {
+      showNotification("Email không hợp lệ!", true);
       return;
     }
 
-    setLoading(true);
+    setFormState(prev => ({ ...prev, loading: true }));
     try {
       const response = await fetch('api/send-registration-otp', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formState.email }),
       });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Có lỗi xảy ra');
+      if (response.status === 429) { // Rate limit exceeded
+        throw new Error('Bạn đã gửi quá nhiều yêu cầu, vui lòng thử lại sau 1 phút.');
       }
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message);
 
       if (result.success) {
-        setIsOTPSent(true);
-        setSuccessMessage('Mã OTP đã được gửi đến email của bạn!');
-        setShowSuccessIcon(true);
-        setTimeout(() => setShowSuccessIcon(false), 3000);
-        setTimeout(() => setSuccessMessage(''), 3000);
-      } else {
-        setError(result.message || 'Có lỗi xảy ra');
+        setFormState(prev => ({ ...prev, isOTPSent: true }));
+        showNotification('Mã OTP đã được gửi đến email của bạn!');
       }
     } catch (error) {
-      setError(error.message || 'Có lỗi xảy ra, vui lòng thử lại sau');
+      showNotification(error.message || 'Có lỗi xảy ra, vui lòng thử lại sau', true);
+      setTimeout(() => {
+        showNotification("", false)
+      }, 5000)
     } finally {
-      setLoading(false);
+      setFormState(prev => ({ ...prev, loading: false }));
     }
   };
 
   const handleVerifyOTP = async () => {
-    if (!otp) {
-      setError("Vui lòng nhập mã OTP!");
+    if (!formState.otp) {
+      showNotification("Vui lòng nhập mã OTP!", true);
       return;
     }
 
-    setLoading(true);
+    setFormState(prev => ({ ...prev, loading: true }));
     try {
       const response = await fetch('api/verify-otp', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, otp }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: formState.email, 
+          otp: formState.otp 
+        }),
       });
 
       const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Có lỗi xảy ra');
-      }
+      if (!response.ok) throw new Error(result.message);
 
       if (result.success) {
-        setIsOTPVerified(true);
-        setSuccessMessage('Xác minh OTP thành công!');
-        setShowSuccessIcon(true);
-        setTimeout(() => setShowSuccessIcon(false), 3000);
-        setTimeout(() => setSuccessMessage(''), 3000);
-      } else {
-        setError(result.message || 'Có lỗi xảy ra');
+        setFormState(prev => ({ ...prev, isOTPVerified: true }));
+        showNotification('Xác minh OTP thành công!');
       }
     } catch (error) {
-      setError(error.message || 'Có lỗi xảy ra, vui lòng thử lại sau');
+      showNotification(error.message || 'Có lỗi xảy ra, vui lòng thử lại sau', true);
     } finally {
-      setLoading(false);
+      setFormState(prev => ({ ...prev, loading: false }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccessMessage('');
+    const { email, password, isLogin, isOTPVerified } = formState;
 
     if (!email || !password) {
-      setError("Vui lòng nhập đầy đủ email và mật khẩu!");
+      showNotification("Vui lòng nhập đầy đủ email và mật khẩu!", true);
       return;
     }
 
     if (!validateEmail(email)) {
-      setError("Email không hợp lệ!");
+      showNotification("Email không hợp lệ!", true);
       return;
     }
 
     if (password.length < 6) {
-      setError("Mật khẩu phải có ít nhất 6 ký tự!");
+      showNotification("Mật khẩu phải có ít nhất 6 ký tự!", true);
       return;
     }
 
     if (!isLogin && !isOTPVerified) {
-      setError("Vui lòng xác minh OTP trước khi đăng ký!");
+      showNotification("Vui lòng xác minh OTP trước khi đăng ký!", true);
       return;
     }
 
-    const endpoint = isLogin ? 'http://localhost:3001/api/login' : 'http://localhost:3001/api/register';
-    const data = { email, password };
-
-    setLoading(true);
+    setFormState(prev => ({ ...prev, loading: true }));
     try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/${isLogin ? 'login' : 'register'}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        }
+      );
 
       const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Có lỗi xảy ra');
-      }
+      if (!response.ok) throw new Error(result.message);
 
       if (result.success) {
         if (isLogin) {
           login(result.data);
           onClose();
         } else {
-          setIsLogin(true);
-          setSuccessMessage('Đăng ký thành công!');
-          setShowSuccessIcon(true);
-          setTimeout(() => setShowSuccessIcon(false), 3000);
-          setTimeout(() => setSuccessMessage(''), 3000);
+          setFormState(prev => ({
+            ...prev,
+            isLogin: true,
+            email: '',
+            password: '',
+            otp: '',
+            isOTPSent: false,
+            isOTPVerified: false
+          }));
+          showNotification('Đăng ký thành công!');
         }
-        setEmail('');
-        setPassword('');
-        setOtp('');
-        setError('');
-        setIsOTPSent(false);
-        setIsOTPVerified(false);
-      } else {
-        setError(result.message || 'Có lỗi xảy ra');
       }
     } catch (error) {
-      setError(error.message || 'Có lỗi xảy ra, vui lòng thử lại sau');
+      showNotification(error.message || 'Có lỗi xảy ra, vui lòng thử lại sau', true);
     } finally {
-      setLoading(false);
+      setFormState(prev => ({ ...prev, loading: false }));
     }
+  };
+
+  const switchMode = (isLoginMode) => {
+    setFormState(prev => ({
+      ...prev,
+      isLogin: isLoginMode,
+      error: '',
+      successMessage: '',
+      isOTPSent: false,
+      isOTPVerified: false
+    }));
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div
-        className="absolute inset-0 bg-black bg-opacity-50"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose} />
       <div className="relative bg-white rounded-lg shadow-lg w-full max-w-md p-6 mx-4">
         <button
           onClick={onClose}
           className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <X className="w-6 h-6" />
         </button>
 
         <div className="flex mb-8 border-b">
           <button
-            className={`flex-1 py-3 text-center ${isLogin ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-500'}`}
-            onClick={() => {
-              setIsLogin(true);
-              setError('');
-              setSuccessMessage('');
-              setIsOTPSent(false);
-              setIsOTPVerified(false);
-            }}
+            className={`flex-1 py-3 text-center ${
+              formState.isLogin ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-500'
+            }`}
+            onClick={() => switchMode(true)}
           >
             Đăng nhập
           </button>
           <button
-            className={`flex-1 py-3 text-center ${!isLogin ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-500'}`}
-            onClick={() => {
-              setIsLogin(false);
-              setError('');
-              setSuccessMessage('');
-              setIsOTPSent(false);
-              setIsOTPVerified(false);
-            }}
+            className={`flex-1 py-3 text-center ${
+              !formState.isLogin ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-500'
+            }`}
+            onClick={() => switchMode(false)}
           >
             Đăng ký
           </button>
         </div>
 
-        {error && (
-          <div className="mb-4 p-2 bg-red-100 text-red-600 rounded-lg text-sm">
-            {error}
+        {formState.error && (
+          <div className="mb-4 p-2 bg-red-100 text-red-600 rounded-lg text-sm flex items-center gap-2">
+            <X className="w-4 h-4" />
+            {formState.error}
           </div>
         )}
 
-        {successMessage && (
-          <div className="mb-4 p-4 bg-green-100 text-green-600 rounded-lg text-center flex items-center justify-center space-x-2">
-            {showSuccessIcon && <i className="fas fa-check-circle text-green-500 text-4xl"></i>}
-            <span className="text-lg font-semibold">{successMessage}</span>
+        {formState.successMessage && (
+          <div className="mb-4 p-4 bg-green-100 text-green-600 rounded-lg text-center flex items-center justify-center gap-2">
+            {formState.showSuccessIcon && <CheckCircle2 className="w-6 h-6" />}
+            <span className="text-lg font-semibold">{formState.successMessage}</span>
           </div>
         )}
 
@@ -231,99 +237,135 @@ const LoginPage = ({ isOpen, onClose }) => {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Email
             </label>
-            <input
-              type="email"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-              placeholder="Nhập email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading || (isOTPSent && !isLogin)}
-            />
-            
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <input
+                  type="email"
+                  name="email"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="Nhập email"
+                  value={formState.email}
+                  onChange={handleInputChange}
+                  disabled={formState.loading}
+                />
+              </div>
+              {!formState.isLogin && (
+                <button
+                  type="button"
+                  className={`whitespace-nowrap px-4 py-2 bg-blue-400 text-white rounded-lg transition-colors duration-200 
+                    ${formState.loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-500'}
+                    ${formState.isOTPSent ? 'bg-gray-400 hover:bg-gray-500' : ''}`}
+                  onClick={handleSendOTP}
+                  disabled={formState.loading || formState.isOTPVerified}
+                >
+                  {formState.loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    </span>
+                  ) : formState.isOTPSent ? 'Gửi lại mã' : 'Gửi mã OTP'}
+                </button>
+              )}
+            </div>
           </div>
 
-          {!isLogin && isOTPSent && !isOTPVerified && (
+
+          {!formState.isLogin && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Mã OTP
               </label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="Nhập mã OTP"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                disabled={loading}
-              />
-              <button
-                type="button"
-                className={`w-full mt-2 py-2 px-4 bg-blue-500 text-white rounded-lg transition-colors duration-200 
-                  ${loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-600'}`}
-                onClick={handleVerifyOTP}
-                disabled={loading}
-              >
-                Xác minh OTP
-              </button>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  name="otp"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="Nhập mã OTP"
+                  value={formState.otp}
+                  onChange={handleInputChange}
+                  disabled={!formState.isOTPSent || formState.loading || formState.isOTPVerified}
+                />
+                <button
+                  type="button"
+                  className={`whitespace-nowrap px-4 py-2 bg-blue-400 text-white rounded-lg transition-colors duration-200 
+                    ${formState.loading || !formState.isOTPSent || formState.isOTPVerified ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-500'}`}
+                  onClick={handleVerifyOTP}
+                  disabled={formState.loading || !formState.isOTPSent || formState.isOTPVerified}
+                >
+                  {formState.loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    </span>
+                  ) : formState.isOTPVerified ? 'Đã xác minh' : 'Xác minh'}
+                </button>
+              </div>
             </div>
           )}
 
-          {/* Phần nhập mật khẩu cho cả đăng nhập và đăng ký */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Mật khẩu
             </label>
             <div className="relative">
               <input
-                type={showPassword ? 'text' : 'password'}
+                type={formState.showPassword ? 'text' : 'password'}
+                name="password"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                 placeholder="Nhập mật khẩu"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={loading || (!isLogin && !isOTPVerified)}
+                value={formState.password}
+                onChange={handleInputChange}
+                disabled={formState.loading || (!formState.isLogin && !formState.isOTPVerified)}
               />
               <button
                 type="button"
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => setFormState(prev => ({ ...prev, showPassword: !prev.showPassword }))}
               >
-                {showPassword ? 'Ẩn' : 'Hiện'}
+                {formState.showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
               </button>
             </div>
           </div>
 
-          {!isLogin && !isOTPSent && (
+          {/* {!formState.isLogin && !formState.isOTPSent && (
             <button
               type="button"
               className={`w-full py-2 px-4 bg-blue-500 text-white rounded-lg transition-colors duration-200 
-                ${loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-600'}`}
+                ${formState.loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-600'}`}
               onClick={handleSendOTP}
-              disabled={loading}
+              disabled={formState.loading}
             >
-              Gửi mã OTP
+              {formState.loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Đang xử lý...
+                </span>
+              ) : (
+                'Gửi mã OTP'
+              )}
             </button>
-          )}
+          )} */}
 
           <button
             type="submit"
             className={`w-full py-2 px-4 bg-red-500 text-white rounded-lg transition-colors duration-200 
-              ${loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-red-600'}`}
-            disabled={loading || (!isLogin && !isOTPVerified)}
+              ${formState.loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-red-600'}`}
+            disabled={formState.loading || (!formState.isLogin && !formState.isOTPVerified)}
           >
-            {loading ? (
-              <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+            {formState.loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" />
                 Đang xử lý...
               </span>
             ) : (
-              isLogin ? 'Đăng nhập' : 'Đăng ký'
+              formState.isLogin ? 'Đăng nhập' : 'Đăng ký'
             )}
           </button>
 
           <div className="text-center text-sm text-gray-600">
-            {isLogin ? (
+            {formState.isLogin ? (
               <>
                 <div>
                   <span>Bạn chưa có tài khoản? </span>
@@ -331,10 +373,7 @@ const LoginPage = ({ isOpen, onClose }) => {
                     className="text-blue-500 hover:text-blue-600"
                     onClick={(e) => {
                       e.preventDefault();
-                      setIsLogin(false);
-                      setError('');
-                      setIsOTPSent(false);
-                      setIsOTPVerified(false);
+                      switchMode(false);
                     }}
                   >
                     Đăng ký ngay
@@ -356,9 +395,13 @@ const LoginPage = ({ isOpen, onClose }) => {
               <>
                 <p>Bằng việc đăng ký, bạn đã đồng ý với alfabook.com về</p>
                 <div className="mt-1">
-                  <a href="#" className="text-blue-500 hover:text-blue-600">Điều khoản dịch vụ</a>
+                  <a href="#" className="text-blue-500 hover:text-blue-600">
+                    Điều khoản dịch vụ
+                  </a>
                   {' & '}
-                  <a href="#" className="text-blue-500 hover:text-blue-600">Chính sách bảo mật</a>
+                  <a href="#" className="text-blue-500 hover:text-blue-600">
+                    Chính sách bảo mật
+                  </a>
                 </div>
               </>
             )}

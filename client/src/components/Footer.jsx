@@ -7,44 +7,36 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* About Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">About Us</h3>
+            <h3 className="text-lg font-semibold">Về Chúng Tôi</h3>
             <p className="text-sm">
-              We are dedicated to providing high-quality solutions and exceptional service to our customers worldwide.
+              Alfabook - Nhà sách trực tuyến, nơi cung cấp những cuốn sách hay nhất từ nhiều thể loại.
             </p>
           </div>
 
           {/* Services Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Services</h3>
-            <ul className="space-y-2">
-              <li>
-                <a className="text-sm hover:text-gray-700 transition-colors">Web Development</a>
-              </li>
-              <li>
-                <a className="text-sm hover:text-gray-700 transition-colors">Mobile Apps</a>
-              </li>
-              <li>
-                <a className="text-sm hover:text-gray-700 transition-colors">Cloud Solutions</a>
-              </li>
-              <li>
-                <a className="text-sm hover:text-gray-700 transition-colors">Consulting</a>
-              </li>
-            </ul>
+            <h3 className="text-lg font-semibold text-gray-700">Hỗ Trợ</h3>
+              <ul className="space-y-2 text-gray-700">
+                <li><a href="#" className="hover:text-gray-400 transition-colors">Chính sách đổi trả</a></li>
+                <li><a href="#" className="hover:text-gray-400 transition-colors">Hướng dẫn mua hàng</a></li>
+                <li><a href="#" className="hover:text-gray-400 transition-colors">Điều khoản sử dụng</a></li>
+                <li><a href="#" className="hover:text-gray-400 transition-colors">Liên hệ hỗ trợ</a></li>
+              </ul>
           </div>
 
           {/* Contact Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Contact</h3>
+            <h3 className="text-lg font-semibold">Liên Hệ</h3>
             <ul className="space-y-2">
-              <li className="text-sm">Email: contact@example.com</li>
-              <li className="text-sm">Phone: (555) 123-4567</li>
-              <li className="text-sm">Address: 123 Business St, Suite 100</li>
+              <li className="text-sm">Email: alfabook@gmail.com</li>
+              <li className="text-sm">Phone: (024) 2222-4242</li>
+              <li className="text-sm">Địa chỉ: Hà Nội</li>
             </ul>
           </div>
 
           {/* Social Media Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Connect With Us</h3>
+            <h3 className="text-lg font-semibold">Mạng Xã Hội </h3>
             <div className="flex space-x-4">
               <a href="#" className="text-black hover:text-gray-700 transition-colors">
                 <span className="sr-only">Facebook</span>
@@ -71,7 +63,7 @@ const Footer = () => {
         {/* Copyright Section */}
         <div className="mt-12 pt-8 border-t border-gray-300">
           <p className="text-sm text-center text-gray-700">
-            © 2025 Your Company Name. All rights reserved.
+            © 2025 Alfabook. Bản quyền thuộc về Alfabook
           </p>
         </div>
       </div>

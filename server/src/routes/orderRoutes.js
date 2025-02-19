@@ -1,12 +1,12 @@
 import express from 'express';
-import { limiter } from '../middleware/rateLimitMiddleware.js';
+import { limiterOrder } from '../middleware/rateLimitMiddleware.js';
 
 import { getOrders, createOrder, getUserOrders, getOrderById, updateOrderStatus, searchOrder } from '../controllers/orderController.js';
 
 const router = express.Router();
 
 router.get('/get-order', getOrders);
-router.post('/orders/create', limiter, createOrder);
+router.post('/orders/create', limiterOrder, createOrder);
 router.get('/user/:userId', getUserOrders);
 router.get('/orders/:orderId', getOrderById);
 router.put('/update-status/:orderId', updateOrderStatus);
