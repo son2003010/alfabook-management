@@ -28,7 +28,7 @@ class UserModel {
     return result.recordset[0];
   }
 
-  // Tìm user theo số điện thoại
+  // Tìm user theo email
   static async findByEmail(email) {
     const request = new sql.Request();
     const result = await request
@@ -36,7 +36,6 @@ class UserModel {
       .query('SELECT UserID, Email, Password, RoleID, Status FROM [User] WHERE Email = @Email');
     return result.recordset[0];
   }
-
   // Tìm admin theo username
   static async findAdminByUsername(username) {
     const request = new sql.Request();
@@ -53,12 +52,49 @@ class UserModel {
       .input('UserID', sql.Int, userId)
       .query('UPDATE [User] SET LastLoginDate = GETDATE() WHERE UserID = @UserID');
   }
-  static async getUsers() {
+  static async getUsers(page = 1, limit = 10) {
+    const offset = (page - 1) * limit;
     const request = new sql.Request();
-    const result = await request.query('SELECT * FROM [User]');
-    return result.recordset
-  }
 
+    // Lấy danh sách user với phân trang
+    const result = await request
+        .input("limit", sql.Int, limit)
+        .input("offset", sql.Int, offset)
+        .query(`
+            SELECT * FROM [User]
+            ORDER BY UserID
+            OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
+        `);
+
+    // Lấy tổng số user để tính totalPages
+    const totalResult = await request.query(`SELECT COUNT(*) as total FROM [User]`);
+    const totalUsers = totalResult.recordset[0].total;
+    const totalPages = Math.ceil(totalUsers / limit); // Tính tổng số trang
+
+    return { users: result.recordset, totalPages };
+}
+
+
+
+  static async updatePassword(email, newPassword) {
+    const request = new sql.Request();
+    await request
+      .input('Email', sql.VarChar, email)
+      .input('Password', sql.VarChar, newPassword)
+      .query('UPDATE [User] SET Password = @Password WHERE Email = @Email');
+  }
+  static async searchUsers(query) {
+    const request = new sql.Request();
+    request.input('query', sql.NVarChar, `%${query}%`);
+    
+    const result = await request.query(`
+      SELECT *
+      FROM [User]
+      WHERE Phone LIKE @query OR Email LIKE @query
+    `);
+
+    return result.recordset;
+  }
 }
 
 export default UserModel;
