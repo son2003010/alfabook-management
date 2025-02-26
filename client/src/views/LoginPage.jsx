@@ -1,37 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { X, CheckCircle2, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { X, CheckCircle2, Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
 
 const LoginPage = ({ isOpen, onClose }) => {
   const { login } = useAuth();
-  const [errorMessage, setErrorMessage] = useState("");
-
   const [formState, setFormState] = useState({
     isLogin: true,
     showPassword: false,
-    email: '',
+    email: localStorage.getItem('email') || '',
     password: '',
+    newPassword: '',
+    confirmPassword: '',
+    showNewPassword: false,
+    showConfirmPassword: false,
     otp: '',
     loading: false,
     error: '',
     successMessage: '',
     showSuccessIcon: false,
-    isOTPSent: false,
-    isOTPVerified: false
+    isOTPSent: localStorage.getItem('isOTPSent') === 'true',
+    isOTPVerified: localStorage.getItem('isOTPVerified') === 'true',
+    isForgotPassword: false,
+    resetPasswordStep: 1 // 1: email, 2: OTP, 3: new password
   });
 
-  if (!isOpen) return null;
+  // const validateEmail = (email) => {
+  //   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  // };
 
-  const validateEmail = (email) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
+  useEffect(() => {
+    if (!isOpen) return;
+    setFormState(prev => ({
+      ...prev,
+      email: localStorage.getItem('email') || '',
+      isOTPSent: localStorage.getItem('isOTPSent') === 'true',
+      isOTPVerified: localStorage.getItem('isOTPVerified') === 'true'
+    }));
+  }, [isOpen]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormState(prev => ({ ...prev, [name]: value }));
+    if (name === 'email') localStorage.setItem('email', value);
   };
-
   const showNotification = (message, isError = false) => {
     setFormState(prev => ({
       ...prev,
@@ -52,10 +64,10 @@ const LoginPage = ({ isOpen, onClose }) => {
   };
 
   const handleSendOTP = async () => {
-    if (!validateEmail(formState.email)) {
-      showNotification("Email không hợp lệ!", true);
-      return;
-    }
+    // if (!validateEmail(formState.email)) {
+    //   showNotification("Email không hợp lệ!", true);
+    //   return;
+    // }
 
     setFormState(prev => ({ ...prev, loading: true }));
     try {
@@ -72,6 +84,8 @@ const LoginPage = ({ isOpen, onClose }) => {
 
       if (result.success) {
         setFormState(prev => ({ ...prev, isOTPSent: true }));
+        localStorage.setItem('isOTPSent', 'true');
+
         showNotification('Mã OTP đã được gửi đến email của bạn!');
       }
     } catch (error) {
@@ -106,6 +120,8 @@ const LoginPage = ({ isOpen, onClose }) => {
 
       if (result.success) {
         setFormState(prev => ({ ...prev, isOTPVerified: true }));
+        localStorage.setItem('isOTPVerified', 'true');
+
         showNotification('Xác minh OTP thành công!');
       }
     } catch (error) {
@@ -124,15 +140,15 @@ const LoginPage = ({ isOpen, onClose }) => {
       return;
     }
 
-    if (!validateEmail(email)) {
-      showNotification("Email không hợp lệ!", true);
-      return;
-    }
+    // if (!validateEmail(email)) {
+    //   showNotification("Email không hợp lệ!", true);
+    //   return;
+    // }
 
-    if (password.length < 6) {
-      showNotification("Mật khẩu phải có ít nhất 6 ký tự!", true);
-      return;
-    }
+    // if (password.length < 6) {
+    //   showNotification("Mật khẩu phải có ít nhất 6 ký tự!", true);
+    //   return;
+    // }
 
     if (!isLogin && !isOTPVerified) {
       showNotification("Vui lòng xác minh OTP trước khi đăng ký!", true);
@@ -149,8 +165,11 @@ const LoginPage = ({ isOpen, onClose }) => {
           body: JSON.stringify({ email, password }),
         }
       );
+      console.log("Password before sending:", password);
 
       const result = await response.json();
+      console.log("API Response:", result);
+
       if (!response.ok) throw new Error(result.message);
 
       if (result.success) {
@@ -187,6 +206,268 @@ const LoginPage = ({ isOpen, onClose }) => {
       isOTPVerified: false
     }));
   };
+  const handleForgotPassword = async () => {
+    if (!formState.email) {
+      showNotification("Vui lòng nhập email!", true);
+      return;
+    }
+
+    setFormState(prev => ({ ...prev, loading: true }));
+    try {
+      const response = await fetch('api/send-reset-password-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formState.email }),
+      });
+      if (response.status === 429) {
+        throw new Error('Bạn đã gửi quá nhiều yêu cầu, vui lòng thử lại sau 1 phút.');
+      }
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message);
+
+      if (result.success) {
+        setFormState(prev => ({ 
+          ...prev, 
+          resetPasswordStep: 2,
+          successMessage: 'Mã OTP đã được gửi đến email của bạn!'
+        }));
+      }
+    } catch (error) {
+      showNotification(error.message || 'Có lỗi xảy ra, vui lòng thử lại sau', true);
+    } finally {
+      setFormState(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const handleVerifyResetOTP = async () => {
+    if (!formState.otp) {
+      showNotification("Vui lòng nhập mã OTP!", true);
+      return;
+    }
+
+    setFormState(prev => ({ ...prev, loading: true }));
+    try {
+      const response = await fetch('api/verify-reset-password-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: formState.email,
+          otp: formState.otp 
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message);
+
+      if (result.success) {
+        setFormState(prev => ({ 
+          ...prev, 
+          resetPasswordStep: 3,
+          successMessage: 'Xác minh OTP thành công!'
+        }));
+      }
+    } catch (error) {
+      showNotification(error.message || 'Có lỗi xảy ra, vui lòng thử lại sau', true);
+    } finally {
+      setFormState(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!formState.newPassword || !formState.confirmPassword) {
+      showNotification("Vui lòng nhập đầy đủ mật khẩu mới!", true);
+      return;
+    }
+
+    if (formState.newPassword !== formState.confirmPassword) {
+      showNotification("Mật khẩu xác nhận không khớp!", true);
+      return;
+    }
+
+    setFormState(prev => ({ ...prev, loading: true }));
+    try {
+      const response = await fetch('api/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: formState.email,
+          newPassword: formState.newPassword
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message);
+
+      if (result.success) {
+        showNotification('Đặt lại mật khẩu thành công!');
+        setTimeout(() => {
+          setFormState(prev => ({
+            ...prev,
+            isForgotPassword: false,
+            resetPasswordStep: 1,
+            newPassword: '',
+            confirmPassword: '',
+            isLogin: true
+          }));
+        }, 2000);
+      }
+    } catch (error) {
+      showNotification(error.message || 'Có lỗi xảy ra, vui lòng thử lại sau', true);
+    } finally {
+      setFormState(prev => ({ ...prev, loading: false }));
+    }
+  };
+  const renderForgotPasswordContent = () => {
+    switch (formState.resetPasswordStep) {
+      case 1:
+        return (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                name="email"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="Nhập email"
+                value={formState.email}
+                onChange={handleInputChange}
+                disabled={formState.loading}
+              />
+            </div>
+            <button
+              type="button"
+              className={`w-full py-2 px-4 bg-red-500 text-white rounded-lg transition-colors duration-200 
+                ${formState.loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-red-600'}`}
+              onClick={handleForgotPassword}
+              disabled={formState.loading}
+            >
+              {formState.loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Đang xử lý...
+                </span>
+              ) : (
+                'Gửi mã OTP'
+              )}
+            </button>
+          </>
+        );
+
+      case 2:
+        return (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mã OTP
+              </label>
+              <input
+                type="text"
+                name="otp"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="Nhập mã OTP"
+                value={formState.otp}
+                onChange={handleInputChange}
+                disabled={formState.loading}
+              />
+            </div>
+            <button
+              type="button"
+              className={`w-full py-2 px-4 bg-red-500 text-white rounded-lg transition-colors duration-200 
+                ${formState.loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-red-600'}`}
+              onClick={handleVerifyResetOTP}
+              disabled={formState.loading}
+            >
+              {formState.loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Đang xử lý...
+                </span>
+              ) : (
+                'Xác nhận OTP'
+              )}
+            </button>
+          </>
+        );
+
+      case 3:
+        return (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mật khẩu mới
+              </label>
+              <div className="relative">
+                <input
+                  type={formState.showNewPassword ? 'text' : 'password'}
+                  name="newPassword"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="Nhập mật khẩu mới"
+                  value={formState.newPassword}
+                  onChange={handleInputChange}
+                  disabled={formState.loading}
+                />
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  onClick={() => setFormState(prev => ({ ...prev, showNewPassword: !prev.showNewPassword }))}
+                >
+                  {formState.showNewPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Xác nhận mật khẩu
+              </label>
+              <div className="relative">
+                <input
+                  type={formState.showConfirmPassword ? 'text' : 'password'}
+                  name="confirmPassword"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="Xác nhận mật khẩu mới"
+                  value={formState.confirmPassword}
+                  onChange={handleInputChange}
+                  disabled={formState.loading}
+                />
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  onClick={() => setFormState(prev => ({ ...prev, showConfirmPassword: !prev.showConfirmPassword }))}
+                >
+                  {formState.showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              className={`w-full py-2 px-4 bg-red-500 text-white rounded-lg transition-colors duration-200 
+                ${formState.loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-red-600'}`}
+              onClick={handleResetPassword}
+              disabled={formState.loading}
+            >
+              {formState.loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Đang xử lý...
+                </span>
+              ) : (
+                'Đặt lại mật khẩu'
+              )}
+            </button>
+          </>
+        );
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -199,24 +480,44 @@ const LoginPage = ({ isOpen, onClose }) => {
           <X className="w-6 h-6" />
         </button>
 
-        <div className="flex mb-8 border-b">
-          <button
-            className={`flex-1 py-3 text-center ${
-              formState.isLogin ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-500'
-            }`}
-            onClick={() => switchMode(true)}
-          >
-            Đăng nhập
-          </button>
-          <button
-            className={`flex-1 py-3 text-center ${
-              !formState.isLogin ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-500'
-            }`}
-            onClick={() => switchMode(false)}
-          >
-            Đăng ký
-          </button>
-        </div>
+        {formState.isForgotPassword ? (
+          <>
+            <div className="flex items-center mb-6">
+              <button
+                onClick={() => setFormState(prev => ({ 
+                  ...prev, 
+                  isForgotPassword: false,
+                  resetPasswordStep: 1,
+                  error: '',
+                  successMessage: ''
+                }))}
+                className="text-gray-500 hover:text-gray-700 mr-2"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <h2 className="text-xl font-semibold">Quên mật khẩu</h2>
+            </div>
+          </>
+        ) : (
+          <div className="flex mb-8 border-b">
+            <button
+              className={`flex-1 py-3 text-center ${
+                formState.isLogin ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-500'
+              }`}
+              onClick={() => switchMode(true)}
+            >
+              Đăng nhập
+            </button>
+            <button
+              className={`flex-1 py-3 text-center ${
+                !formState.isLogin ? 'text-red-500 border-b-2 border-red-500' : 'text-gray-500'
+              }`}
+              onClick={() => switchMode(false)}
+            >
+              Đăng ký
+            </button>
+          </div>
+        )}
 
         {formState.error && (
           <div className="mb-4 p-2 bg-red-100 text-red-600 rounded-lg text-sm flex items-center gap-2">
@@ -232,180 +533,182 @@ const LoginPage = ({ isOpen, onClose }) => {
           </div>
         )}
 
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <div className="flex gap-2">
-              <div className="flex-1 relative">
-                <input
-                  type="email"
-                  name="email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="Nhập email"
-                  value={formState.email}
-                  onChange={handleInputChange}
-                  disabled={formState.loading}
-                />
+        <form className="space-y-6" onSubmit={formState.isForgotPassword ? e => e.preventDefault() : handleSubmit}>
+          {formState.isForgotPassword ? (
+            renderForgotPasswordContent()
+          ) : (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <input
+                      type="email"
+                      name="email"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                      placeholder="Nhập email"
+                      value={formState.email}
+                      onChange={handleInputChange}
+                      disabled={formState.loading}
+                    />
+                  </div>
+                  {!formState.isLogin && (
+                    <button
+                      type="button"
+                      className={`whitespace-nowrap px-4 py-2 bg-blue-400 text-white rounded-lg transition-colors duration-200 
+                        ${formState.loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-500'}
+                        ${formState.isOTPSent ? 'bg-gray-400 hover:bg-gray-500' : ''}`}
+                      onClick={handleSendOTP}
+                      disabled={formState.loading || formState.isOTPVerified}
+                    >
+                      {formState.loading ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        </span>
+                      ) : formState.isOTPSent ? 'Gửi lại mã' : 'Gửi mã OTP'}
+                    </button>
+                  )}
+                </div>
               </div>
+
               {!formState.isLogin && (
-                <button
-                  type="button"
-                  className={`whitespace-nowrap px-4 py-2 bg-blue-400 text-white rounded-lg transition-colors duration-200 
-                    ${formState.loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-500'}
-                    ${formState.isOTPSent ? 'bg-gray-400 hover:bg-gray-500' : ''}`}
-                  onClick={handleSendOTP}
-                  disabled={formState.loading || formState.isOTPVerified}
-                >
-                  {formState.loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    </span>
-                  ) : formState.isOTPSent ? 'Gửi lại mã' : 'Gửi mã OTP'}
-                </button>
-              )}
-            </div>
-          </div>
-
-
-          {!formState.isLogin && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Mã OTP
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  name="otp"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="Nhập mã OTP"
-                  value={formState.otp}
-                  onChange={handleInputChange}
-                  disabled={!formState.isOTPSent || formState.loading || formState.isOTPVerified}
-                />
-                <button
-                  type="button"
-                  className={`whitespace-nowrap px-4 py-2 bg-blue-400 text-white rounded-lg transition-colors duration-200 
-                    ${formState.loading || !formState.isOTPSent || formState.isOTPVerified ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-500'}`}
-                  onClick={handleVerifyOTP}
-                  disabled={formState.loading || !formState.isOTPSent || formState.isOTPVerified}
-                >
-                  {formState.loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    </span>
-                  ) : formState.isOTPVerified ? 'Đã xác minh' : 'Xác minh'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mật khẩu
-            </label>
-            <div className="relative">
-              <input
-                type={formState.showPassword ? 'text' : 'password'}
-                name="password"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="Nhập mật khẩu"
-                value={formState.password}
-                onChange={handleInputChange}
-                disabled={formState.loading || (!formState.isLogin && !formState.isOTPVerified)}
-              />
-              <button
-                type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                onClick={() => setFormState(prev => ({ ...prev, showPassword: !prev.showPassword }))}
-              >
-                {formState.showPassword ? (
-                  <EyeOff className="w-5 h-5" />
-                ) : (
-                  <Eye className="w-5 h-5" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* {!formState.isLogin && !formState.isOTPSent && (
-            <button
-              type="button"
-              className={`w-full py-2 px-4 bg-blue-500 text-white rounded-lg transition-colors duration-200 
-                ${formState.loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-600'}`}
-              onClick={handleSendOTP}
-              disabled={formState.loading}
-            >
-              {formState.loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Đang xử lý...
-                </span>
-              ) : (
-                'Gửi mã OTP'
-              )}
-            </button>
-          )} */}
-
-          <button
-            type="submit"
-            className={`w-full py-2 px-4 bg-red-500 text-white rounded-lg transition-colors duration-200 
-              ${formState.loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-red-600'}`}
-            disabled={formState.loading || (!formState.isLogin && !formState.isOTPVerified)}
-          >
-            {formState.loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Đang xử lý...
-              </span>
-            ) : (
-              formState.isLogin ? 'Đăng nhập' : 'Đăng ký'
-            )}
-          </button>
-
-          <div className="text-center text-sm text-gray-600">
-            {formState.isLogin ? (
-              <>
                 <div>
-                  <span>Bạn chưa có tài khoản? </span>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Mã OTP
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      name="otp"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                      placeholder="Nhập mã OTP"
+                      value={formState.otp}
+                      onChange={handleInputChange}
+                      disabled={!formState.isOTPSent || formState.loading || formState.isOTPVerified}
+                    />
+                    <button
+                      type="button"
+                      className={`whitespace-nowrap px-4 py-2 bg-blue-400 text-white rounded-lg transition-colors duration-200 
+                        ${formState.loading || !formState.isOTPSent || formState.isOTPVerified ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-500'}`}
+                      onClick={handleVerifyOTP}
+                      disabled={formState.loading || !formState.isOTPSent || formState.isOTPVerified}
+                    >
+                      {formState.loading ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        </span>
+                      ) : formState.isOTPVerified ? 'Đã xác minh' : 'Xác minh'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mật khẩu
+                </label>
+                <div className="relative">
+                  <input
+                    type={formState.showPassword ? 'text' : 'password'}
+                    name="password"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="Nhập mật khẩu"
+                    value={formState.password}
+                    onChange={handleInputChange}
+                    disabled={formState.loading || (!formState.isLogin && !formState.isOTPVerified)}
+                  />
                   <button
-                    className="text-blue-500 hover:text-blue-600"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      switchMode(false);
-                    }}
+                    type="button"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    onClick={() => setFormState(prev => ({ ...prev, showPassword: !prev.showPassword }))}
                   >
-                    Đăng ký ngay
+                    {formState.showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
                   </button>
                 </div>
-                <div className="mt-2">
-                  <span>Bạn là ADMIN bấm </span>
-                  <Link 
-                    to="/admin-login" 
-                    className="text-red-500 hover:text-red-600"
-                    onClick={onClose}
+              </div>
+              {formState.isLogin && (
+                  <div className="flex justify-end items-center mt-1">
+                    
+                  <button
+                    type="button"
+                    className="text-sm text-blue-500 hover:text-blue-600 transition-colors duration-200"
+                    onClick={() => setFormState(prev => ({ 
+                      ...prev, 
+                      isForgotPassword: true,
+                      error: '',
+                      successMessage: ''
+                    }))}
                   >
-                    vào đây
-                  </Link>
-                  <span> để đăng nhập</span>
+                    Quên mật khẩu?
+                  </button>
                 </div>
-              </>
-            ) : (
-              <>
-                <p>Bằng việc đăng ký, bạn đã đồng ý với alfabook.com về</p>
-                <div className="mt-1">
-                  <a href="#" className="text-blue-500 hover:text-blue-600">
-                    Điều khoản dịch vụ
-                  </a>
-                  {' & '}
-                  <a href="#" className="text-blue-500 hover:text-blue-600">
-                    Chính sách bảo mật
-                  </a>
-                </div>
-              </>
-            )}
-          </div>
+              )}
+              <button
+                type="submit"
+                className={`w-full py-2 px-4 bg-red-500 text-white rounded-lg transition-colors duration-200 
+                  ${formState.loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-red-600'}`}
+                disabled={formState.loading || (!formState.isLogin && !formState.isOTPVerified)}
+              >
+                {formState.loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Đang xử lý...
+                  </span>
+                ) : (
+                  formState.isLogin ? 'Đăng nhập' : 'Đăng ký'
+                )}
+              </button>
+                
+              <div className="text-center text-sm text-gray-600">
+                {formState.isLogin ? (
+                  <>
+                    <div>
+                      <span>Bạn chưa có tài khoản? </span>
+                      <button
+                        className="text-blue-500 hover:text-blue-600"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          switchMode(false);
+                        }}
+                      >
+                        Đăng ký ngay
+                      </button>
+                    </div>
+                    <div className="mt-2">
+                      <span>Bạn là ADMIN bấm </span>
+                      <Link 
+                        to="/admin-login" 
+                        className="text-red-500 hover:text-red-600"
+                        onClick={onClose}
+                      >
+                        vào đây
+                      </Link>
+                      <span> để đăng nhập</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p>Bằng việc đăng ký, bạn đã đồng ý với alfabook.com về</p>
+                    <div className="mt-1">
+                      <a href="#" className="text-blue-500 hover:text-blue-600">
+                        Điều khoản dịch vụ
+                      </a>
+                      {' & '}
+                      <a href="#" className="text-blue-500 hover:text-blue-600">
+                        Chính sách bảo mật
+                      </a>
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          )}
         </form>
       </div>
     </div>

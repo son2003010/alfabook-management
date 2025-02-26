@@ -252,6 +252,8 @@ const AdminProducts = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Giá</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nhà Xuất Bản</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tác Giả</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Giảm giá</th>
+
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kho</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
                 </tr>
@@ -265,6 +267,8 @@ const AdminProducts = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPrice(product.Price)} VND</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.publisherName}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.authorNames}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.Discount}%</td>
+
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.Quantity}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button className="text-blue-600 hover:text-blue-800 mx-2 transition-colors">

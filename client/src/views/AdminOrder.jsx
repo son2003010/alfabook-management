@@ -75,7 +75,12 @@ const AdminOrder = () => {
       console.error("Lỗi:", error);
     }
   };
-
+  useEffect(() => {
+    if (!searchQuery) {
+      setSearchResults([]);
+    }
+  }, [searchQuery]);
+  
   const getOrderStatusStyles = (status) => {
     switch (status) {
       case 'Chờ xác nhận':

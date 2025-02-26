@@ -1,26 +1,58 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Mail, Phone, MoreVertical, UserPlus, Filter, Edit, Trash2, Lock } from 'lucide-react';
+import { Search, Mail, Phone, ChevronRight, UserPlus, ChevronLeft, Edit, Trash2, Lock } from 'lucide-react';
 
 const AdminUser = () => {
   const [users, setUsers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const usersPerPage = 10;
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await fetch('/api/get-user');
+        const response = await fetch(`/api/get-user?page=${currentPage}&limit=${usersPerPage}`);
         if (!response.ok) {
           throw new Error('Lỗi khi lấy dữ liệu');
         }
         const data = await response.json();
-        setUsers(data);
+        setUsers(data.users);  // Đảm bảo API trả về `users` thay vì toàn bộ object
+        setTotalPages(data.totalPages);
       } catch (error) {
         console.error('Lỗi fetch:', error);
       }
     };
-
+  
     fetchUsers();
-  }, []);
+  }, [currentPage]); // ✅ Chạy lại khi `currentPage` thay đổi
+  useEffect(() => {
+    console.log(`Trang hiện tại: ${currentPage}, Tổng số trang: ${totalPages}`);
+  }, [currentPage, totalPages]);
+  
 
+  const handleSearch = async () => {
+    if (!searchQuery) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/search-users?query=${searchQuery}`);
+      if (!response.ok) throw new Error("Lỗi khi tìm kiếm khách hàng");
+      const data = await response.json();
+      setSearchResults(data);
+    } catch (error) {
+      console.error("Lỗi:", error);
+    }
+  };
+  useEffect(() => {
+    if (!searchQuery) {
+      setSearchResults([]);
+    }
+  }, [searchQuery]);
+  
   const getStatusBadge = (status) => {
     const styles = {
       1: 'bg-green-100 text-green-800',
@@ -56,8 +88,17 @@ const AdminUser = () => {
             type="text"
             placeholder="Tìm kiếm theo tên, email, số điện thoại..."
             className="pl-10 pr-4 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
           />
         </div>
+        <button
+          onClick={handleSearch}
+          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 whitespace-nowrap"
+        >
+          Tìm kiếm
+        </button>
         <select className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option>Tất cả trạng thái</option>
           <option>Hoạt động</option>
@@ -79,7 +120,7 @@ const AdminUser = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {users.map((user) => (
+          {(searchResults.length > 0 ? searchResults : users).map((user) => (
               <tr key={user.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
@@ -126,47 +167,38 @@ const AdminUser = () => {
           </tbody>
         </table>
 
-        <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-          <div className="flex items-center justify-between">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                Trước
-              </button>
-              <button className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                Sau
-              </button>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Hiển thị <span className="font-medium">1</span> đến <span className="font-medium">10</span> trong số{' '}
-                  <span className="font-medium">97</span> người dùng
-                </p>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                  <button className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                    <span className="sr-only">Previous</span>
-                    Trước
-                  </button>
-                  <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                    1
-                  </button>
-                  <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                    2
-                  </button>
-                  <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                    3
-                  </button>
-                  <button className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                    <span className="sr-only">Next</span>
-                    Sau
-                  </button>
-                </nav>
-              </div>
-            </div>
-          </div>
+        {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4 mt-6">
+          <button
+            className={`p-2 rounded-lg flex items-center ${
+              currentPage === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-gray-700 hover:bg-gray-50 transition-colors'
+            } border`}
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+
+          <span className="text-gray-700">
+            Trang {currentPage} / {totalPages}
+          </span>
+
+          <button
+            className={`p-2 rounded-lg flex items-center ${
+              currentPage === totalPages
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-gray-700 hover:bg-gray-50 transition-colors'
+            } border`}
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
         </div>
+      )}
+
       </div>
     </div>
   );
