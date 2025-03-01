@@ -17,8 +17,7 @@ class OTPModel {
     const request = new sql.Request();
     const result = await request
       .input('Email', sql.VarChar, email)
-      .input('OTP', sql.VarChar, otp)
-      .query(`
+      .input('OTP', sql.VarChar, otp).query(`
         SELECT TOP 1 * FROM OTP
         WHERE Email = @Email 
         AND OTPCode = @OTP 
@@ -33,13 +32,12 @@ class OTPModel {
     const request = new sql.Request();
     await request
       .input('Email', sql.VarChar, email)
-      .input('OTP', sql.VarChar, otp)
-      .query(`
+      .input('OTP', sql.VarChar, otp).query(`
         UPDATE OTP 
         SET IsUsed = 1 
         WHERE Email = @Email 
         AND OTPCode = @OTP
-      `); 
+      `);
   }
 
   static async deleteOTP(email) {
@@ -49,4 +47,4 @@ class OTPModel {
       .query('DELETE FROM OTP WHERE Email = @Email');
   }
 }
-export default OTPModel
+export default OTPModel;

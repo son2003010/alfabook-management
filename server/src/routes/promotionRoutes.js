@@ -1,5 +1,10 @@
 import express from 'express';
-import { getPromotion, addPromotion, updatePromotion, deletePromotion } from '../controllers/promotionController.js';
+import {
+  getPromotion,
+  addPromotion,
+  updatePromotion,
+  deletePromotion,
+} from '../controllers/promotionController.js';
 
 const router = express.Router();
 

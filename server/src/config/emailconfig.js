@@ -10,19 +10,23 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: userEmail,
-    pass: userPass
-  }
+    pass: userPass,
+  },
+  secure: true, // Sử dụng SSL/TLS
+  tls: {
+    rejectUnauthorized: true, // Từ chối kết nối không an toàn
+  },
 });
 
 export const sendEmail = async (to, subject, text) => {
   try {
-    const info = await transporter.sendMail({
+    const info = transporter.sendMail({
       from: `"Alfabook" <${process.env.EMAIL_USER}>`,
       to,
       subject,
-      text
+      text,
     });
-    console.log('✅ Email sent:', info.response);
+    console.log(info);
     return true;
   } catch (error) {
     console.error('❌ Lỗi gửi email:', error);

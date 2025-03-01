@@ -1,5 +1,11 @@
 import express from 'express';
-import { getBookByID, getBooksByCategory, getBooksByCategoryBySub, searchBook, addBook  } from '../controllers/bookController.js';
+import {
+  getBookByID,
+  getBooksByCategory,
+  getBooksByCategoryBySub,
+  searchBook,
+  addBook,
+} from '../controllers/bookController.js';
 
 const router = express.Router();
 

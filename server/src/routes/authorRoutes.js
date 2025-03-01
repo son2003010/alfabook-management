@@ -1,5 +1,10 @@
 import express from 'express';
-import { getAuthor, addAuthor, updateAuthor, deleteAuthor } from '../controllers/authorController.js';
+import {
+  getAuthor,
+  addAuthor,
+  updateAuthor,
+  deleteAuthor,
+} from '../controllers/authorController.js';
 
 const router = express.Router();
 

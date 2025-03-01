@@ -1,4 +1,3 @@
-// models/userModel.js
 import { sql } from '../config/db.js';
 
 class UserModel {
@@ -19,8 +18,7 @@ class UserModel {
       .input('Email', sql.VarChar, email)
       .input('Password', sql.VarChar, hashedPassword)
       .input('RoleID', sql.Int, 2)
-      .input('Status', sql.Int, 1)
-      .query(`
+      .input('Status', sql.Int, 1).query(`
         INSERT INTO [User] (Email, Password, RoleID, Status, CreatedDate, UpdatedDate)
         VALUES (@Email, @Password, @RoleID, @Status, GETDATE(), GETDATE());
         SELECT SCOPE_IDENTITY() AS UserID;
@@ -33,7 +31,9 @@ class UserModel {
     const request = new sql.Request();
     const result = await request
       .input('Email', sql.VarChar, email)
-      .query('SELECT UserID, Email, Password, RoleID, Status FROM [User] WHERE Email = @Email');
+      .query(
+        'SELECT UserID, Email, Password, RoleID, Status FROM [User] WHERE Email = @Email',
+      );
     return result.recordset[0];
   }
   // Tìm admin theo username
@@ -41,7 +41,9 @@ class UserModel {
     const request = new sql.Request();
     const result = await request
       .input('Username', sql.VarChar, username)
-      .query('SELECT UserID, Username, Password, RoleID, Status FROM [User] WHERE Username = @Username');
+      .query(
+        'SELECT UserID, Username, Password, RoleID, Status FROM [User] WHERE Username = @Username',
+      );
     return result.recordset[0];
   }
 
@@ -50,7 +52,9 @@ class UserModel {
     const request = new sql.Request();
     await request
       .input('UserID', sql.Int, userId)
-      .query('UPDATE [User] SET LastLoginDate = GETDATE() WHERE UserID = @UserID');
+      .query(
+        'UPDATE [User] SET LastLoginDate = GETDATE() WHERE UserID = @UserID',
+      );
   }
   static async getUsers(page = 1, limit = 10) {
     const offset = (page - 1) * limit;
@@ -58,23 +62,22 @@ class UserModel {
 
     // Lấy danh sách user với phân trang
     const result = await request
-        .input("limit", sql.Int, limit)
-        .input("offset", sql.Int, offset)
-        .query(`
+      .input('limit', sql.Int, limit)
+      .input('offset', sql.Int, offset).query(`
             SELECT * FROM [User]
             ORDER BY UserID
             OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
         `);
 
     // Lấy tổng số user để tính totalPages
-    const totalResult = await request.query(`SELECT COUNT(*) as total FROM [User]`);
+    const totalResult = await request.query(
+      `SELECT COUNT(*) as total FROM [User]`,
+    );
     const totalUsers = totalResult.recordset[0].total;
     const totalPages = Math.ceil(totalUsers / limit); // Tính tổng số trang
 
     return { users: result.recordset, totalPages };
-}
-
-
+  }
 
   static async updatePassword(email, newPassword) {
     const request = new sql.Request();
@@ -86,7 +89,7 @@ class UserModel {
   static async searchUsers(query) {
     const request = new sql.Request();
     request.input('query', sql.NVarChar, `%${query}%`);
-    
+
     const result = await request.query(`
       SELECT *
       FROM [User]

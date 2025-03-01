@@ -1,7 +1,14 @@
 import express from 'express';
 import { limiterOrder } from '../middleware/rateLimitMiddleware.js';
 
-import { getOrders, createOrder, getUserOrders, getOrderById, updateOrderStatus, searchOrder } from '../controllers/orderController.js';
+import {
+  getOrders,
+  createOrder,
+  getUserOrders,
+  getOrderById,
+  updateOrderStatus,
+  searchOrder,
+} from '../controllers/orderController.js';
 
 const router = express.Router();
 

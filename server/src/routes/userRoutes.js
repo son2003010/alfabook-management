@@ -1,7 +1,18 @@
 import express from 'express';
 import { limiterSendOtp } from '../middleware/rateLimitMiddleware.js';
 
-import { registerUser, loginUser, loginAdmin, getUsers, sendRegistrationOTP, verifyOTP, sendResetPasswordOTP, verifyResetPasswordOTP, resetPassword, searchUser } from '../controllers/userController.js';
+import {
+  registerUser,
+  loginUser,
+  loginAdmin,
+  getUsers,
+  sendRegistrationOTP,
+  verifyOTP,
+  sendResetPasswordOTP,
+  verifyResetPasswordOTP,
+  resetPassword,
+  searchUser,
+} from '../controllers/userController.js';
 
 const router = express.Router();
 

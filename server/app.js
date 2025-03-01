@@ -19,13 +19,13 @@ connectDB();
 
 app.use(express.json());
 app.use(cors());
-app.set('trust proxy', 1)
+app.set('trust proxy', 1);
 
 app.use('/api', userRoutes);
-app.use('/api', categoryRoutes)
-app.use('/api', bookRoutes)
-app.use('/api', cartRoutes)
-app.use('/api', orderRoutes)
+app.use('/api', categoryRoutes);
+app.use('/api', bookRoutes);
+app.use('/api', cartRoutes);
+app.use('/api', orderRoutes);
 app.use('/api', publisherRoutes);
 app.use('/api', authorRoutes);
 app.use('/api', promotionRoutes);
@@ -33,7 +33,7 @@ app.use('/api', salesRoutes);
 
 app.use(errorHandler);
 
-const PORT = process.env.PORT
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

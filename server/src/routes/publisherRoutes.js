@@ -1,5 +1,10 @@
 import express from 'express';
-import { getPublisher, addPublisher, updatePublisher, deletePublisher } from '../controllers/publisherController.js';
+import {
+  getPublisher,
+  addPublisher,
+  updatePublisher,
+  deletePublisher,
+} from '../controllers/publisherController.js';
 
 const router = express.Router();
 

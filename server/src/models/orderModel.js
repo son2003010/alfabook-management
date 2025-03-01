@@ -6,7 +6,7 @@ const ORDER_STATUSES = [
   'Đang giao hàng',
   'Đã giao hàng',
   'Đang hoàn hàng',
-  'Hoàn hàng thành công'
+  'Hoàn hàng thành công',
 ];
 
 const STATUS_FLOW = {
@@ -14,9 +14,9 @@ const STATUS_FLOW = {
   'Đang chuẩn bị hàng': ['Đang vận chuyển', 'Đang hoàn hàng'],
   'Đang vận chuyển': ['Đang giao hàng', 'Đang hoàn hàng'],
   'Đang giao hàng': ['Đã giao hàng', 'Đang hoàn hàng'],
-  'Đã giao hàng': [], // Final state
+  'Đã giao hàng': [], // Trạng thái cuối cùng
   'Đang hoàn hàng': ['Hoàn hàng thành công'],
-  'Hoàn hàng thành công': [], // Final state
+  'Hoàn hàng thành công': [], // Trạng thái cuối cùng
 };
 
 class OrderModel {
@@ -29,65 +29,75 @@ class OrderModel {
       WHERE OrderID LIKE 'AFB${date}%'
       ORDER BY OrderID DESC
     `);
-    
-    const sequence = result.recordset[0] ? 
-      parseInt(result.recordset[0].sequence) + 1 : 
-      1;
-    
+
+    const sequence = result.recordset[0]
+      ? parseInt(result.recordset[0].sequence) + 1
+      : 1;
+
     return `AFB${date}${sequence.toString().padStart(2, '0')}`;
   }
 
   static async validateStock(bookId, requestedQuantity, transaction) {
     const request = new sql.Request(transaction);
     request.input('bookId', sql.Int, bookId);
-    
+
     const result = await request.query(`
       SELECT Quantity 
       FROM Book 
       WHERE BookID = @bookId
     `);
 
-    if (!result.recordset[0] || result.recordset[0].Quantity < requestedQuantity) {
-      throw new Error(`Insufficient stock for book ID ${bookId}`);
+    if (
+      !result.recordset[0] ||
+      result.recordset[0].Quantity < requestedQuantity
+    ) {
+      throw new Error(`Không đủ số lượng cho ID sách ${bookId}`);
     }
   }
   static async createOrder(orderData) {
     const transaction = new sql.Transaction();
     try {
       await transaction.begin();
-      
-      // Validate all items have sufficient stock
+
+      // Kiểm tra số lượng tồn kho cho tất cả các sản phẩm trong đơn hàng
       for (const item of orderData.orderDetails) {
         await this.validateStock(item.bookId, item.quantity, transaction);
       }
 
       const orderId = await this.getNextOrderSequence(transaction);
       const orderRequest = new sql.Request(transaction);
-      
-      // Validate total price
+
+      // Kiểm tra tổng giá trị đơn hàng
       const calculatedTotal = orderData.orderDetails.reduce(
-        (sum, item) => sum + (item.price * item.quantity), 
-        0
+        (sum, item) => sum + item.price * item.quantity,
+        0,
       );
-      
+
       if (Math.abs(calculatedTotal - orderData.totalPrice) > 0.01) {
-        throw new Error('Order total price mismatch');
+        throw new Error('Tổng giá trị đơn hàng không khớp');
       }
 
-      // Only allow COD payment method
       if (orderData.paymentMethod !== 'Thanh toán tiền mặt') {
-        throw new Error('Only COD payment method is supported');
+        throw new Error('Chỉ hỗ trợ phương thức thanh toán tiền mặt');
       }
 
-      // Create order
+      // Tạo đơn hàng
       orderRequest.input('orderId', sql.VarChar(20), orderId);
       orderRequest.input('receiverName', sql.NVarChar, orderData.receiverName);
       orderRequest.input('receiverPhone', sql.VarChar, orderData.receiverPhone);
       orderRequest.input('province', sql.NVarChar, orderData.province);
       orderRequest.input('district', sql.NVarChar, orderData.district);
       orderRequest.input('ward', sql.NVarChar, orderData.ward);
-      orderRequest.input('streetAddress', sql.NVarChar, orderData.streetAddress);
-      orderRequest.input('totalPrice', sql.Decimal(18,2), orderData.totalPrice);
+      orderRequest.input(
+        'streetAddress',
+        sql.NVarChar,
+        orderData.streetAddress,
+      );
+      orderRequest.input(
+        'totalPrice',
+        sql.Decimal(18, 2),
+        orderData.totalPrice,
+      );
       orderRequest.input('status', sql.NVarChar, 'Chờ xác nhận');
       orderRequest.input('paymentMethod', sql.NVarChar, 'Thanh toán tiền mặt');
       orderRequest.input('userId', sql.Int, orderData.userId);
@@ -107,13 +117,13 @@ class OrderModel {
         )
       `);
 
-      // Create order details and update stock
+      // Tạo chi tiết đơn hàng và cập nhật số lượng tồn kho
       for (const item of orderData.orderDetails) {
         const detailRequest = new sql.Request(transaction);
         detailRequest.input('orderId', sql.VarChar(20), orderId);
         detailRequest.input('bookId', sql.Int, item.bookId);
         detailRequest.input('quantity', sql.Int, item.quantity);
-        detailRequest.input('price', sql.Decimal(18,2), item.price);
+        detailRequest.input('price', sql.Decimal(18, 2), item.price);
 
         await detailRequest.query(`
           INSERT INTO OrderDetail (OrderID, BookID, Quantity, Price)
@@ -129,10 +139,9 @@ class OrderModel {
 
       await transaction.commit();
       return { orderId };
-
     } catch (error) {
       await transaction.rollback();
-      console.error('Error in OrderModel.createOrder:', error);
+      console.error('Lỗi trong OrderModel.createOrder:', error);
       throw error;
     }
   }
@@ -141,38 +150,40 @@ class OrderModel {
     const transaction = new sql.Transaction();
     try {
       await transaction.begin();
-      
+
       const request = new sql.Request(transaction);
       request.input('orderId', sql.VarChar(20), orderId);
-      
-      // Get current order info
+
+      // Lấy thông tin đơn hàng hiện tại
       const orderResult = await request.query(`
         SELECT Status, PaymentMethod, TotalPrice 
         FROM [Order] 
         WHERE OrderID = @orderId
       `);
-      
+
       if (!orderResult.recordset[0]) {
-        throw new Error('Order not found');
+        throw new Error('Không tìm thấy đơn hàng');
       }
-      
+
       const currentStatus = orderResult.recordset[0].Status;
-      
-      // Validate status exists
+
+      // Xác thực trạng thái
       if (!ORDER_STATUSES.includes(newStatus)) {
-        throw new Error('Invalid order status');
+        throw new Error('Trạng thái đơn hàng không hợp lệ');
       }
-      
-      // Validate status flow
+
+      // Xác thực luồng trạng thái
       const allowedNextStatuses = STATUS_FLOW[currentStatus];
       if (!allowedNextStatuses.includes(newStatus)) {
-        throw new Error(`Cannot change status from ${currentStatus} to ${newStatus}`);
+        throw new Error(
+          `Không thể thay đổi trạng thái từ ${currentStatus} sang ${newStatus}`,
+        );
       }
 
       request.input('status', sql.NVarChar, newStatus);
       request.input('updatedDate', sql.DateTime, new Date());
 
-      // Update order status
+      // Cập nhật trạng thái đơn hàng
       await request.query(`
         UPDATE [Order]
         SET 
@@ -181,7 +192,7 @@ class OrderModel {
         WHERE OrderID = @orderId
       `);
 
-      // Create payment record when order is delivered
+      // Lưu thông tin thanh toán vào database khi đơn hàng được giao
       if (newStatus === 'Đã giao hàng') {
         await request.query(`
           INSERT INTO Payment (
@@ -203,22 +214,19 @@ class OrderModel {
 
       await transaction.commit();
       return true;
-
     } catch (error) {
       await transaction.rollback();
-      console.error('Error in OrderModel.updateOrderStatus:', error);
+      console.error('Lỗi trong OrderModel.updateOrderStatus:', error);
       throw error;
     }
   }
 
   static async getUserOrders(userId) {
     try {
-        console.log("Fetching orders for userId:", userId); // Kiểm tra userId
+      const request = new sql.Request();
+      request.input('userId', sql.Int, userId);
 
-        const request = new sql.Request();
-        request.input('userId', sql.Int, userId);
-
-        const result = await request.query(`
+      const result = await request.query(`
             SELECT 
                 o.OrderID,
                 o.UserID,
@@ -247,14 +255,12 @@ class OrderModel {
             ORDER BY o.CreatedDate DESC
         `);
 
-        console.log("Query result:", result.recordset); // Kiểm tra kết quả truy vấn
-        return result.recordset;
-
+      console.log('Kết quả truy vấn:', result.recordset); // Kiểm tra kết quả truy vấn
+      return result.recordset;
     } catch (error) {
-        console.error('Error in OrderModel.getUserOrders:', error);
-        throw error;
+      console.error('Lỗi trong OrderModel.getUserOrders:', error);
+      throw error;
     }
-
   }
 
   static async getOrderById(orderId) {
@@ -286,20 +292,19 @@ class OrderModel {
 
       const order = {
         ...result.recordset[0],
-        orderDetails: result.recordset.map(record => ({
+        orderDetails: result.recordset.map((record) => ({
           orderDetailID: record.OrderDetailID,
           bookID: record.BookID,
           quantity: record.Quantity,
           price: record.Price,
           title: record.Title,
-          image: record.Image
-        }))
+          image: record.Image,
+        })),
       };
 
       return order;
-
     } catch (error) {
-      console.error('Error in OrderModel.getOrderById:', error);
+      console.error('Lỗi trong OrderModel.getOrderById:', error);
       throw error;
     }
   }
@@ -311,7 +316,7 @@ class OrderModel {
   static async searchOrders(query) {
     const request = new sql.Request();
     request.input('query', sql.NVarChar, `%${query}%`);
-    
+
     const result = await request.query(`
       SELECT 
         OrderID, ReceiverName, ReceiverPhone, OrderDate, TotalPrice, Status, PaymentMethod

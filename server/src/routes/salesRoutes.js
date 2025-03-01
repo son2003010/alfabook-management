@@ -1,5 +1,10 @@
 import express from 'express';
-import { getSalesChart, getNewUsers, getRevenuePayment, getNewOrders } from '../controllers/salesController.js';
+import {
+  getSalesChart,
+  getNewUsers,
+  getRevenuePayment,
+  getNewOrders,
+} from '../controllers/salesController.js';
 
 const router = express.Router();
 
