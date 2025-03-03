@@ -6,7 +6,7 @@ export const addToCart = async (req, res) => {
     await CartModel.addToCart(userId, bookId, quantity);
     const cartCount = await CartModel.getCartCount(userId);
 
-    res.status(200).json({success: true, cartCount, message: 'Added to cart successfully'});
+    res.status(200).json({success: true, cartCount, message: 'Thêm vào giỏ hàng thành công'});
   } catch (err) {
     next(err);
   }

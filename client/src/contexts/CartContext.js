@@ -31,7 +31,6 @@ export const CartProvider = ({ children }) => {
       const data = await response.json();
       if (data.success) {
         setCartItem(data.items);
-
       }
     } catch (error) {
       console.error("Lỗi khi lấy số lượng giỏ hàng:", error);
@@ -42,10 +41,10 @@ export const CartProvider = ({ children }) => {
     if (!userId) return;
 
     try {
-      const response = await fetch('/api/cart/add', {
-        method: 'POST',
+      const response = await fetch("/api/cart/add", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ userId, bookId, quantity }),
       });
@@ -59,7 +58,7 @@ export const CartProvider = ({ children }) => {
       return false;
     } catch (error) {
       console.error("Lỗi khi lấy số lượng giỏ hàng:", error);
-      return false
+      return false;
     }
   };
 
@@ -68,13 +67,13 @@ export const CartProvider = ({ children }) => {
 
     try {
       const response = await fetch(`/api/cart/update/${cartId}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ quantity }),
       });
-      console.log("Received cartId:", cartId);  // Kiểm tra giá trị cartId nhận được từ URL
+      console.log("Received cartId:", cartId); // Kiểm tra giá trị cartId nhận được từ URL
 
       const data = await response.json();
       if (data.success) {
@@ -93,7 +92,7 @@ export const CartProvider = ({ children }) => {
 
     try {
       const response = await fetch(`/api/cart/delete/${cartId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       const data = await response.json();
@@ -114,7 +113,7 @@ export const CartProvider = ({ children }) => {
 
     try {
       const response = await fetch(`/api/cart/clear/${userId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       const data = await response.json();
@@ -137,7 +136,18 @@ export const CartProvider = ({ children }) => {
     }
   }, [userId]);
   return (
-    <CartContext.Provider value={{ cartCount, cartItems, fetchCartCount, fetchCartItems, addToCart, updateQuantity, removeFromCart, clearCart }}>
+    <CartContext.Provider
+      value={{
+        cartCount,
+        cartItems,
+        fetchCartCount,
+        fetchCartItems,
+        addToCart,
+        updateQuantity,
+        removeFromCart,
+        clearCart,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

@@ -13,28 +13,34 @@ const AdminLoginPage = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
     try {
-      const response = await fetch('api/admin-login', {
+      const response = await fetch('/api/admin-login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ username: adminCode, password })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: adminCode, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Handle success, e.g., save token and navigate
-        console.log('Login successful:', data);
-        // Navigate to AdminPage
-        navigate('/admin');  // Navigate to AdminPage
+        // Lưu cả accessToken và refreshToken vào localStorage
+        localStorage.setItem('accessToken', data.data.accessToken);
+        localStorage.setItem('refreshToken', data.data.refreshToken);
+        localStorage.setItem('roleId', data.data.roleId);
+        
+        // Chuyển hướng đến trang Admin nếu là Admin
+        if (data.data.roleId === 1) {
+          navigate('/admin/dashboard');
+        } else {
+          setError('Bạn không có quyền truy cập Admin.');
+          localStorage.clear();
+        }
       } else {
-        setError(data.message || 'Login failed.');
+        setError(data.message || 'Đăng nhập thất bại.');
       }
     } catch (err) {
-      setError('An error occurred, please try again later.');
+      console.error("Lỗi đăng nhập:", err);
+      setError('Có lỗi xảy ra, vui lòng thử lại sau.');
     } finally {
       setLoading(false);
     }

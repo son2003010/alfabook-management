@@ -2,6 +2,7 @@ import UserModel from '../models/userModel.js';
 import bcrypt from 'bcrypt';
 import OTPModel from '../models/otpModel.js';
 import { sendEmail } from '../config/emailconfig.js';
+import { config, generateToken, generateRefreshToken } from '../config/jwtconfig.js';
 
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -162,8 +163,72 @@ export const loginUser = async (req, res) => {
     next(err);
   }
 };
-
-export const loginAdmin = async (req, res) => {
+export const refreshToken = async (req, res, next) => {
+  const { refreshToken } = req.body;
+  
+  if (!refreshToken) {
+    return res.status(400).json({
+      success: false,
+      message: 'Refresh token không được cung cấp'
+    });
+  }
+  
+  try {
+    // Xác thực refresh token
+    const decoded = jwt.verify(refreshToken, config.secretKey);
+    
+    // Kiểm tra xem refresh token có hợp lệ trong database không
+    const user = await UserModel.findUserById(decoded.userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Người dùng không tồn tại'
+      });
+    }
+    
+    // Kiểm tra refresh token trong database
+    const isValidRefreshToken = await UserModel.verifyRefreshToken(user.UserID, refreshToken);
+    
+    if (!isValidRefreshToken) {
+      return res.status(403).json({
+        success: false,
+        message: 'Refresh token không hợp lệ'
+      });
+    }
+    
+    // Tạo payload cho token mới
+    const payload = {
+      userId: user.UserID,
+      username: user.Username,
+      roleId: user.RoleID,
+    };
+    
+    // Tạo access token mới
+    const accessToken = generateToken(payload);
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Làm mới token thành công',
+      data: {
+        accessToken
+      }
+    });
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Refresh token đã hết hạn, vui lòng đăng nhập lại'
+      });
+    }
+    
+    return res.status(403).json({
+      success: false,
+      message: 'Refresh token không hợp lệ'
+    });
+  }
+};
+export const loginAdmin = async (req, res, next) => {
   const { username, password } = req.body;
 
   try {
@@ -190,7 +255,22 @@ export const loginAdmin = async (req, res) => {
       });
     }
 
+    // Cập nhật thời gian đăng nhập cuối
     await UserModel.updateLastLogin(user.UserID);
+
+    // Tạo payload cho JWT
+    const payload = {
+      userId: user.UserID,
+      username: user.Username,
+      roleId: user.RoleID,
+    };
+
+    // Tạo access token và refresh token
+    const accessToken = generateToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+
+    // Lưu refresh token vào database (nếu cần)
+    await UserModel.saveRefreshToken(user.UserID, refreshToken);
 
     return res.status(200).json({
       success: true,
@@ -199,10 +279,30 @@ export const loginAdmin = async (req, res) => {
         userId: user.UserID,
         username: user.Username,
         roleId: user.RoleID,
+        accessToken,
+        refreshToken,
       },
     });
   } catch (error) {
-    next(err);
+    next(error);
+  }
+};
+export const logoutAdmin = async (req, res, next) => {
+  const { refreshToken } = req.body;
+  const userId = req.user.userId;
+  
+  try {
+    // Xóa refresh token từ database
+    if (refreshToken) {
+      await UserModel.removeRefreshToken(userId, refreshToken);
+    }
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Đăng xuất thành công'
+    });
+  } catch (error) {
+    next(error);
   }
 };
 

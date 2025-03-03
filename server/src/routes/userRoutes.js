@@ -1,10 +1,12 @@
 import express from 'express';
 import { limiterSendOtp } from '../middleware/rateLimitMiddleware.js';
+import { authenticateAdmin } from '../middleware/adminAuth.js'; 
 
 import {
   registerUser,
   loginUser,
   loginAdmin,
+  logoutAdmin,
   getUsers,
   sendRegistrationOTP,
   verifyOTP,
@@ -21,6 +23,8 @@ router.post('/verify-otp', verifyOTP);
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 router.post('/admin-login', loginAdmin);
+router.post('/admin-logout', authenticateAdmin, logoutAdmin);
+
 router.get('/get-user', getUsers);
 
 router.post('/send-reset-password-otp', sendResetPasswordOTP);

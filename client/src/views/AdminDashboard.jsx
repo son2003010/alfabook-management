@@ -39,21 +39,24 @@ const AdminDashboard = () => {
 
       // Cập nhật state với dữ liệu thực tế
       setStats({
-        revenue: `${revenueData.revenueThisMonth.toLocaleString()} VND`,
-        newOrders: ordersData.totalOrdersToday,
-        newUsers: usersData.totalUsersToday,
+        revenue: `${(revenueData.revenueThisMonth || 0).toLocaleString()} VND`,
+        newOrders: ordersData.totalOrdersToday || 0,
+        newUsers: usersData.totalUsersToday || 0,
       });
+      
       setRevenueStats({
-        revenueThisMonth: revenueData.revenueThisMonth,
-        revenueLastMonth: revenueData.revenueLastMonth,
+        revenueThisMonth: revenueData.revenueThisMonth || 0,
+        revenueLastMonth: revenueData.revenueLastMonth || 0,
       });
+      
       setOrderStats({
-        totalOrdersToday: ordersData.totalOrdersToday,
-        totalOrdersYesterday: ordersData.totalOrdersYesterday,
+        totalOrdersToday: ordersData.totalOrdersToday || 0,
+        totalOrdersYesterday: ordersData.totalOrdersYesterday || 0,
       });
+      
       setUserStats({
-        totalUsersToday: usersData.totalUsersToday,
-        totalUsersYesterday: usersData.totalUsersYesterday,
+        totalUsersToday: usersData.totalUsersToday || 0,
+        totalUsersYesterday: usersData.totalUsersYesterday || 0,
       });
       setSalesData(chartData.salesByMonth || []); // Cập nhật dữ liệu biểu đồ
     } catch (error) {
@@ -61,16 +64,17 @@ const AdminDashboard = () => {
     }
   };
   const userGrowth = userStats.totalUsersYesterday > 0
-  ? ((userStats.totalUsersToday - userStats.totalUsersYesterday) / userStats.totalUsersYesterday * 100).toFixed(2)
-  : userStats.totalUsersToday > 0 ? 100 : 0;
+    ? ((userStats.totalUsersToday - userStats.totalUsersYesterday) / userStats.totalUsersYesterday * 100).toFixed(2)
+    : userStats.totalUsersToday > 0 ? 100 : 0;
 
   const orderGrowth = orderStats.totalOrdersYesterday > 0 
-  ? ((orderStats.totalOrdersToday - orderStats.totalOrdersYesterday) / orderStats.totalOrdersYesterday * 100).toFixed(2)
-  : orderStats.totalOrdersToday > 0 ? 100 : 0;
+    ? ((orderStats.totalOrdersToday - orderStats.totalOrdersYesterday) / orderStats.totalOrdersYesterday * 100).toFixed(2)
+    : orderStats.totalOrdersToday > 0 ? 100 : 0;
 
-  const revenueGrowth = revenueStats.revenueLastMonth === 0 
-  ? ((revenueStats.revenueThisMonth - revenueStats.revenueLastMonth) / revenueStats.revenueLastMonth * 100).toFixed(2)
-  : revenueStats.revenueThisMonth > 0 ? 100 : 0;
+  // Sửa logic tính toán revenueGrowth để đúng hơn
+  const revenueGrowth = revenueStats.revenueLastMonth > 0 
+    ? ((revenueStats.revenueThisMonth - revenueStats.revenueLastMonth) / revenueStats.revenueLastMonth * 100).toFixed(2)
+    : revenueStats.revenueThisMonth > 0 ? 100 : 0;
 
   return (
     <div className="space-y-6">

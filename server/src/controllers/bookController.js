@@ -104,13 +104,10 @@ export const searchBook = async (req, res) => {
 export const addBook = async (req, res) => {
   try {
     const newBook = req.body;
-    console.log(newBook);
     const createdBook = await BookModel.addBook(newBook);
 
-    res.status(201).json({
-      message: 'Book added successfully',
-      book: createdBook,
-    });
+    res.status(200).json({success: true, createdBook, message: 'Thêm sách thành công'});
+
   } catch (err) {
     next(err);
   }

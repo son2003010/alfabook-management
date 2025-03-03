@@ -98,6 +98,74 @@ class UserModel {
 
     return result.recordset;
   }
+
+  static async saveRefreshToken(userId, refreshToken) {
+    try {
+      const request = new sql.Request();
+      request.input('userId', sql.Int, userId);
+      request.input('refreshToken', sql.NVarChar, refreshToken);
+  
+      const result = await request.query(`
+        INSERT INTO User_Refresh_Tokens (User_Id, Refresh_token, Expires_at)
+        VALUES (@userId, @refreshToken, DATEADD(DAY, 7, GETDATE()))
+      `);
+  
+      return result.recordset;
+    } catch (error) {
+      console.error('Lỗi khi lưu refresh token:', error);
+      throw error;
+    }
+  }
+  static async verifyRefreshToken (userId, refreshToken) {
+    try {
+      const request = new sql.Request();
+      request.input('userId', sql.Int, userId);
+      request.input('refreshToken', sql.NVarChar, refreshToken);
+
+      const result = await request.query(`
+        SELECT * FROM User_Refresh_Tokens
+        WHERE User_Id = @userId AND Refresh_token = @refreshToken AND Expires_at > GETDATE()
+      `);
+
+      return result.recordset.length > 0;
+    } catch (error) {
+      console.error('Lỗi khi xác thực refresh token:', error);
+      throw error;
+    }
+  }
+  static async removeRefreshToken (userId, refreshToken) {
+    try {
+      const request = new sql.Request();
+      request.input('userId', sql.Int, userId);
+      request.input('refreshToken', sql.NVarChar, refreshToken);
+  
+      await request.query(`
+        DELETE FROM User_Refresh_Tokens
+        WHERE User_Id = @userId AND Refresh_token = @refreshToken
+      `);
+  
+      return true;
+    } catch (error) {
+      console.error('Lỗi khi xóa refresh token:', error);
+      throw error;
+    }
+  }
+  static async findUserById  (userId) {
+    try {
+      const request = new sql.Request();
+      request.input('userId', sql.Int, userId);
+  
+      const result = await request.query(`
+        SELECT * FROM [User]
+        WHERE UserID = @userId
+      `);
+  
+      return result.recordset.length > 0 ? result.recordset[0] : null;
+    } catch (error) {
+      console.error('Lỗi khi tìm người dùng theo ID:', error);
+      throw error;
+    }
+  }
 }
 
 export default UserModel;

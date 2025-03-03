@@ -30,7 +30,7 @@ export const getOrderById = async (req, res) => {
   try {
     const order = await OrderModel.getOrderById(req.params.orderId);
     if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
+      return res.status(404).json({ error: 'Không tìm thấy đơn hàng' });
     }
     res.status(200).json(order);
   } catch (err) {

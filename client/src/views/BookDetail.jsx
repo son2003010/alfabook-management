@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Minus, Plus, Star } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Minus, Plus, Star } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
 function BookDetail() {
@@ -16,7 +16,7 @@ function BookDetail() {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedTab, setSelectedTab] = useState('description');
+  const [selectedTab, setSelectedTab] = useState("description");
   const [isAdded, setIsAdded] = useState(false); // Trạng thái thêm vào giỏ hàng
 
   useEffect(() => {
@@ -25,10 +25,10 @@ function BookDetail() {
       try {
         const response = await fetch(`/api/get-book/${bookId}`);
         if (!response.ok) {
-          throw new Error('Lỗi khi tải thông tin sách');
+          throw new Error("Lỗi khi tải thông tin sách");
         }
         const data = await response.json();
-        setBook(data)
+        setBook(data);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -40,7 +40,7 @@ function BookDetail() {
   }, [bookId]);
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN').format(price);
+    return new Intl.NumberFormat("vi-VN").format(price);
   };
 
   const getBookImage = (imageName) => {
@@ -53,41 +53,39 @@ function BookDetail() {
   };
 
   const handleQuantityChange = (action) => {
-    if (action === 'increase') {
-      setQuantity(prev => prev + 1);
-    } else if (action === 'decrease' && quantity > 1) {
-      setQuantity(prev => prev - 1);
+    if (action === "increase") {
+      setQuantity((prev) => prev + 1);
+    } else if (action === "decrease" && quantity > 1) {
+      setQuantity((prev) => prev - 1);
     }
   };
 
   const handleAddToCart = async () => {
-    try{
+    try {
       if (userId) {
-        addToCart(bookId, quantity)
-        setIsAdded(true)
+        addToCart(bookId, quantity);
+        setIsAdded(true);
         setTimeout(() => setIsAdded(false), 500); // Ẩn thông báo sau 2s
-      } else{
+      } else {
         alert("Bạn cần đăng nhập trước khi thêm vào giỏ hàng!");
         return;
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
     }
-
   };
   const handleBuy = async () => {
-    try{
+    try {
       if (userId) {
-        addToCart(bookId, quantity)
-        navigate('/checkout')
-      } else{
+        addToCart(bookId, quantity);
+        navigate("/checkout");
+      } else {
         alert("Bạn cần đăng nhập trước khi thêm vào giỏ hàng!");
         return;
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
     }
-
   };
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -116,7 +114,10 @@ function BookDetail() {
           </div>
           <div className="flex gap-2 overflow-x-auto">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="w-20 h-20 flex-shrink-0 border rounded-md p-1">
+              <div
+                key={i}
+                className="w-20 h-20 flex-shrink-0 border rounded-md p-1"
+              >
                 <img
                   src={getBookImage(book.Image)}
                   alt={`Thumbnail ${i}`}
@@ -130,11 +131,13 @@ function BookDetail() {
         {/* Right Column - Info */}
         <div className="space-y-6">
           <h1 className="text-2xl font-medium">{book.Title}</h1>
-          
+
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="text-gray-600">Nhà cung cấp:</span>
-              <a href="/" className="text-blue-600">AlfaBook</a>
+              <a href="/" className="text-blue-600">
+                AlfaBook
+              </a>
             </div>
             <div className="flex justify-between text-gray-600">
               <span>Tác giả: {book.AuthorName}</span>
@@ -165,9 +168,7 @@ function BookDetail() {
               )}
             </div>
             <div className="text-blue-600">
-              {book.Quantity > 0 
-                ? `Còn hàng`
-                : 'Hết hàng'}
+              {book.Quantity > 0 ? `Còn hàng` : "Hết hàng"}
             </div>
           </div>
 
@@ -200,21 +201,23 @@ function BookDetail() {
             <div className="flex items-center gap-4">
               <span>Số lượng:</span>
               <div className="flex items-center border rounded">
-                <button 
-                  onClick={() => handleQuantityChange('decrease')}
+                <button
+                  onClick={() => handleQuantityChange("decrease")}
                   className="p-2"
                   disabled={quantity <= 1}
                 >
                   <Minus className="w-4 h-4" />
                 </button>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-12 text-center border-x" 
+                  onChange={(e) =>
+                    setQuantity(Math.max(1, parseInt(e.target.value) || 1))
+                  }
+                  className="w-12 text-center border-x"
                 />
-                <button 
-                  onClick={() => handleQuantityChange('increase')}
+                <button
+                  onClick={() => handleQuantityChange("increase")}
                   className="p-2"
                 >
                   <Plus className="w-4 h-4" />
@@ -223,46 +226,46 @@ function BookDetail() {
             </div>
 
             <>
-      <div className="flex gap-4">
-        <button 
-          onClick={handleAddToCart} 
-          className="flex-1 border border-red-600 text-red-600 py-3 rounded-lg hover:bg-red-50"
-        >
-          Thêm vào giỏ hàng
-        </button>
-        <button 
-          onClick={handleBuy}
-          className="flex-1 bg-red-600 text-white py-3 rounded-lg hover:bg-red-700"
-        >
-          Mua ngay
-        </button>
-      </div>
+              <div className="flex gap-4">
+                <button
+                  onClick={handleAddToCart}
+                  className="flex-1 border border-red-600 text-red-600 py-3 rounded-lg hover:bg-red-50"
+                >
+                  Thêm vào giỏ hàng
+                </button>
+                <button
+                  onClick={handleBuy}
+                  className="flex-1 bg-red-600 text-white py-3 rounded-lg hover:bg-red-700"
+                >
+                  Mua ngay
+                </button>
+              </div>
 
-      {/* Success Modal */}
-      {isAdded && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="fixed inset-0 bg-black opacity-30"></div>
-          <div className="relative bg-white rounded-lg shadow-lg px-8 py-6 flex items-center gap-3 animate-fade-in">
-            <svg 
-              className="w-6 h-6 text-green-500" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth="2" 
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-            <span className="text-gray-800 font-medium">
-              Đã thêm vào giỏ hàng
-            </span>
-          </div>
-        </div>
-      )}
-    </>
+              {/* Success Modal */}
+              {isAdded && (
+                <div className="fixed inset-0 flex items-center justify-center z-50">
+                  <div className="fixed inset-0 bg-black opacity-30"></div>
+                  <div className="relative bg-white rounded-lg shadow-lg px-8 py-6 flex items-center gap-3 animate-fade-in">
+                    <svg
+                      className="w-6 h-6 text-green-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    <span className="text-gray-800 font-medium">
+                      Đã thêm vào giỏ hàng
+                    </span>
+                  </div>
+                </div>
+              )}
+            </>
           </div>
         </div>
       </div>
@@ -272,14 +275,22 @@ function BookDetail() {
         <div className="border-b">
           <div className="flex space-x-8">
             <button
-              onClick={() => setSelectedTab('description')}
-              className={`py-4 relative ${selectedTab === 'description' ? 'text-red-600 border-b-2 border-red-600' : 'text-gray-600'}`}
+              onClick={() => setSelectedTab("description")}
+              className={`py-4 relative ${
+                selectedTab === "description"
+                  ? "text-red-600 border-b-2 border-red-600"
+                  : "text-gray-600"
+              }`}
             >
               Mô tả sách
             </button>
             <button
-              onClick={() => setSelectedTab('details')}
-              className={`py-4 relative ${selectedTab === 'details' ? 'text-red-600 border-b-2 border-red-600' : 'text-gray-600'}`}
+              onClick={() => setSelectedTab("details")}
+              className={`py-4 relative ${
+                selectedTab === "details"
+                  ? "text-red-600 border-b-2 border-red-600"
+                  : "text-gray-600"
+              }`}
             >
               Thông tin chi tiết
             </button>
@@ -287,7 +298,7 @@ function BookDetail() {
         </div>
 
         <div className="py-6">
-          {selectedTab === 'description' ? (
+          {selectedTab === "description" ? (
             <div className="prose max-w-none">
               <p>{book.Description}</p>
             </div>
@@ -328,5 +339,3 @@ function BookDetail() {
 }
 
 export default BookDetail;
-
-

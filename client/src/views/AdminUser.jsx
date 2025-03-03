@@ -1,11 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Mail, Phone, ChevronRight, UserPlus, ChevronLeft, Edit, Trash2, Lock } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import {
+  Search,
+  Mail,
+  Phone,
+  ChevronRight,
+  UserPlus,
+  ChevronLeft,
+  Edit,
+  Trash2,
+  Lock,
+} from "lucide-react";
 
 const AdminUser = () => {
   const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const usersPerPage = 10;
@@ -13,24 +23,25 @@ const AdminUser = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await fetch(`/api/get-user?page=${currentPage}&limit=${usersPerPage}`);
+        const response = await fetch(
+          `/api/get-user?page=${currentPage}&limit=${usersPerPage}`
+        );
         if (!response.ok) {
-          throw new Error('Lỗi khi lấy dữ liệu');
+          throw new Error("Lỗi khi lấy dữ liệu");
         }
         const data = await response.json();
-        setUsers(data.users);  // Đảm bảo API trả về `users` thay vì toàn bộ object
+        setUsers(data.users); // Đảm bảo API trả về `users` thay vì toàn bộ object
         setTotalPages(data.totalPages);
       } catch (error) {
-        console.error('Lỗi fetch:', error);
+        console.error("Lỗi fetch:", error);
       }
     };
-  
+
     fetchUsers();
   }, [currentPage]); // ✅ Chạy lại khi `currentPage` thay đổi
   useEffect(() => {
     console.log(`Trang hiện tại: ${currentPage}, Tổng số trang: ${totalPages}`);
   }, [currentPage, totalPages]);
-  
 
   const handleSearch = async () => {
     if (!searchQuery) {
@@ -52,17 +63,17 @@ const AdminUser = () => {
       setSearchResults([]);
     }
   }, [searchQuery]);
-  
+
   const getStatusBadge = (status) => {
     const styles = {
-      1: 'bg-green-100 text-green-800',
-      2: 'bg-gray-100 text-gray-800',
-      3: 'bg-red-100 text-red-800'
+      1: "bg-green-100 text-green-800",
+      2: "bg-gray-100 text-gray-800",
+      3: "bg-red-100 text-red-800",
     };
     const labels = {
-      1: 'Hoạt động',
-      2: 'Không hoạt động',
-      3: 'Bị khóa'
+      1: "Hoạt động",
+      2: "Không hoạt động",
+      3: "Bị khóa",
     };
     return (
       <span className={`px-2 py-1 rounded-full text-xs ${styles[status]}`}>
@@ -90,7 +101,7 @@ const AdminUser = () => {
             className="pl-10 pr-4 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           />
         </div>
         <button
@@ -111,26 +122,42 @@ const AdminUser = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Người dùng</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Liên hệ</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tham gia</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn hàng</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Người dùng
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Liên hệ
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Ngày tham gia
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Đơn hàng
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Trạng thái
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Thao tác
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-          {(searchResults.length > 0 ? searchResults : users).map((user) => (
+            {(searchResults.length > 0 ? searchResults : users).map((user) => (
               <tr key={user.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10">
                       <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                        <span className="text-gray-500 font-medium">{user.UserID}</span>
+                        <span className="text-gray-500 font-medium">
+                          {user.UserID}
+                        </span>
                       </div>
                     </div>
                     <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">{user.Username}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {user.Username}
+                      </div>
                     </div>
                   </div>
                 </td>
@@ -143,7 +170,7 @@ const AdminUser = () => {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(user.CreatedDate).toLocaleDateString('vi-VN')}
+                  {new Date(user.CreatedDate).toLocaleDateString("vi-VN")}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {user.orders}
@@ -168,37 +195,38 @@ const AdminUser = () => {
         </table>
 
         {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 mt-6">
-          <button
-            className={`p-2 rounded-lg flex items-center ${
-              currentPage === 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-gray-700 hover:bg-gray-50 transition-colors'
-            } border`}
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
+          <div className="flex justify-center items-center gap-4 mt-6">
+            <button
+              className={`p-2 rounded-lg flex items-center ${
+                currentPage === 1
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+              } border`}
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
 
-          <span className="text-gray-700">
-            Trang {currentPage} / {totalPages}
-          </span>
+            <span className="text-gray-700">
+              Trang {currentPage} / {totalPages}
+            </span>
 
-          <button
-            className={`p-2 rounded-lg flex items-center ${
-              currentPage === totalPages
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-gray-700 hover:bg-gray-50 transition-colors'
-            } border`}
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-      )}
-
+            <button
+              className={`p-2 rounded-lg flex items-center ${
+                currentPage === totalPages
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+              } border`}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

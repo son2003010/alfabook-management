@@ -27,7 +27,7 @@ export const addCategory = async (req, res) => {
     }
     
     const newCategory = await CategoryModel.addCategory(categoryName);
-    res.status(200).json(newCategory);
+    res.status(200).json({success: true, newCategory, message: 'Thêm danh mục thành công'});
   } catch (err) {
     next(err);
   }
