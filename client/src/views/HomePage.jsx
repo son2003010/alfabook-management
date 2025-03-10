@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import ChatBot from "../views/ChatBot"; // Import ChatBot component
 
 // Import hình ảnh banner
 import banner_slide_1 from "../assets/banner_slide_1.png";
@@ -373,6 +374,7 @@ function HomePage() {
           </div>
         </section>
       ))}
+      <ChatBot />
     </main>
   );
 }

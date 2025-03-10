@@ -1,6 +1,6 @@
 import CartModel from '../models/CartModel.js';
 
-export const addToCart = async (req, res) => {
+export const addToCart = async (req, res, next) => {
   try {
     const { userId, bookId, quantity } = req.body;
     await CartModel.addToCart(userId, bookId, quantity);
@@ -12,7 +12,7 @@ export const addToCart = async (req, res) => {
   }
 };
 
-export const getCartItems = async (req, res) => {
+export const getCartItems = async (req, res, next) => {
   try {
     const { userId } = req.params;
     const items = await CartModel.getCartItems(userId);
@@ -23,7 +23,7 @@ export const getCartItems = async (req, res) => {
   }
 };
 
-export const updateQuantity = async (req, res) => {
+export const updateQuantity = async (req, res, next) => {
   try {
     const { cartId } = req.params;
     const { quantity } = req.body;
@@ -36,7 +36,7 @@ export const updateQuantity = async (req, res) => {
   }
 };
 
-export const removeFromCart = async (req, res) => {
+export const removeFromCart = async (req, res, next) => {
   try {
     const { cartId } = req.params;
     await CartModel.removeFromCart(cartId);
@@ -47,7 +47,7 @@ export const removeFromCart = async (req, res) => {
   }
 };
 
-export const clearCart = async (req, res) => {
+export const clearCart = async (req, res, next) => {
   try {
     const { userId } = req.params;
     await CartModel.clearCart(userId);
@@ -58,7 +58,7 @@ export const clearCart = async (req, res) => {
   }
 };
 
-export const getCartCount = async (req, res) => {
+export const getCartCount = async (req, res, next) => {
   try {
     const { userId } = req.params;
     const count = await CartModel.getCartCount(userId);

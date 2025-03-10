@@ -1,6 +1,6 @@
 import AuthorModel from '../models/authorModel.js';
 
-export const getAuthor = async (req, res) => {
+export const getAuthor = async (req, res, next) => {
   try {
     const authors = await AuthorModel.getAuthors();
     res.status(200).json(authors);
@@ -9,7 +9,7 @@ export const getAuthor = async (req, res) => {
   }
 };
 
-export const addAuthor = async (req, res) => {
+export const addAuthor = async (req, res, next) => {
   const { AuthorID, AuthorName, Description } = req.body;
   try {
     // Kiểm tra nếu AuthorID đã tồn tại
@@ -32,7 +32,7 @@ export const addAuthor = async (req, res) => {
   }
 };
 
-export const updateAuthor = async (req, res) => {
+export const updateAuthor = async (req, res, next) => {
   const { id } = req.params;
   const { AuthorName, Description } = req.body;
   try {
@@ -43,7 +43,7 @@ export const updateAuthor = async (req, res) => {
   }
 };
 
-export const deleteAuthor = async (req, res) => {
+export const deleteAuthor = async (req, res, next) => {
   const { id } = req.params;
   try {
     await AuthorModel.deleteAuthor(id);

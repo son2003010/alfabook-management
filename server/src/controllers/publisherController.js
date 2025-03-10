@@ -1,6 +1,6 @@
 import PublisherModel from '../models/publisherModel.js';
 
-export const getPublisher = async (req, res) => {
+export const getPublisher = async (req, res, next) => {
   try {
     const publishers = await PublisherModel.getPublishers();
     res.status(200).json(publishers);
@@ -9,7 +9,7 @@ export const getPublisher = async (req, res) => {
   }
 };
 
-export const addPublisher = async (req, res) => {
+export const addPublisher = async (req, res, next) => {
   const { PublisherName, Address, Phone } = req.body;
 
   // Kiểm tra thiếu thông tin
@@ -34,7 +34,7 @@ export const addPublisher = async (req, res) => {
   }
 };
 
-export const updatePublisher = async (req, res) => {
+export const updatePublisher = async (req, res, next) => {
   const { id } = req.params;
   const { PublisherName, Address, Phone } = req.body;
   try {
@@ -45,7 +45,7 @@ export const updatePublisher = async (req, res) => {
   }
 };
 
-export const deletePublisher = async (req, res) => {
+export const deletePublisher = async (req, res, next) => {
   const { id } = req.params;
   try {
     await PublisherModel.deletePublisher(id);

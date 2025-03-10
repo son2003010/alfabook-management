@@ -503,7 +503,17 @@ const CheckoutPage = () => {
                   />
                   <span className="ml-3">Thanh toán khi nhận hàng</span>
                 </label>
-
+                <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="Thanh toán "
+                    checked={paymentMethod === "Thanh toán tiền mặt"}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="h-4 w-4 text-red-600 focus:ring-red-500"
+                  />
+                  <span className="ml-3">Thanh toán Online</span>
+                </label>
                 {/* <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
                   <input
                     type="radio"

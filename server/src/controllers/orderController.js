@@ -1,6 +1,6 @@
 import OrderModel from '../models/orderModel.js';
 
-export const getOrders = async (req, res) => {
+export const getOrders = async (req, res, next) => {
   try {
     const orders = await OrderModel.getOrders();
     res.status(200).json(orders);
@@ -8,7 +8,7 @@ export const getOrders = async (req, res) => {
     next(err);
   }
 };
-export const createOrder = async (req, res) => {
+export const createOrder = async (req, res, next) => {
   try {
     const { orderId } = await OrderModel.createOrder(req.body);
     res.status(200).json({success: true, message: 'Tạo đơn hàng thành công', orderId});
@@ -17,7 +17,7 @@ export const createOrder = async (req, res) => {
   }
 };
 
-export const getUserOrders = async (req, res) => {
+export const getUserOrders = async (req, res, next) => {
   try {
     const orders = await OrderModel.getUserOrders(req.params.userId);
     res.status(200).json(orders);
@@ -26,7 +26,7 @@ export const getUserOrders = async (req, res) => {
   }
 };
 
-export const getOrderById = async (req, res) => {
+export const getOrderById = async (req, res, next) => {
   try {
     const order = await OrderModel.getOrderById(req.params.orderId);
     if (!order) {
@@ -38,7 +38,7 @@ export const getOrderById = async (req, res) => {
   }
 };
 
-export const updateOrderStatus = async (req, res) => {
+export const updateOrderStatus = async (req, res, next) => {
   try {
     const { orderId } = req.params;
     const { status } = req.body;
@@ -53,7 +53,7 @@ export const updateOrderStatus = async (req, res) => {
   }
 };
 
-export const searchOrder = async (req, res) => {
+export const searchOrder = async (req, res, next) => {
   try {
     const { query } = req.query;
     if (!query) {

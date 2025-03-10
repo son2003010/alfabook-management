@@ -1,6 +1,6 @@
 import PromotionModel from '../models/promotionModel.js';
 
-export const getPromotion = async (req, res) => {
+export const getPromotion = async (req, res, next) => {
   try {
     const promotions = await PromotionModel.getPromotions();
     res.status(200).json(promotions);
@@ -9,7 +9,7 @@ export const getPromotion = async (req, res) => {
   }
 };
 
-export const addPromotion = async (req, res) => {
+export const addPromotion = async (req, res, next) => {
   try {
     const {
       PromotionName,
@@ -48,7 +48,7 @@ export const addPromotion = async (req, res) => {
   }
 };
 
-export const updatePromotion = async (req, res) => {
+export const updatePromotion = async (req, res, next) => {
   try {
     const PromotionID = Number(req.params.promotionId); // Chuyển đổi sang số
 
@@ -99,7 +99,7 @@ export const updatePromotion = async (req, res) => {
   }
 };
 
-export const deletePromotion = async (req, res) => {
+export const deletePromotion = async (req, res, next) => {
   try {
     const { promotionId } = req.params;
 

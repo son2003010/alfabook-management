@@ -1,6 +1,6 @@
 import BookModel from '../models/bookModel.js';
 
-export const getBookByID = async (req, res) => {
+export const getBookByID = async (req, res, next) => {
   try {
     const { bookId } = req.params;
 
@@ -23,7 +23,7 @@ export const getBookByID = async (req, res) => {
   }
 };
 
-export const getBooksByCategory = async (req, res) => {
+export const getBooksByCategory = async (req, res, next) => {
   try {
     const { categoryId } = req.params;
     const { page = 1, pageSize = 20 } = req.query; // Lấy page và pageSize từ query
@@ -44,7 +44,7 @@ export const getBooksByCategory = async (req, res) => {
     next(err);
   }
 };
-export const getBooksByCategoryBySub = async (req, res) => {
+export const getBooksByCategoryBySub = async (req, res, next) => {
   try {
     const categoryId = parseInt(req.params.categoryId);
     let {
@@ -87,7 +87,7 @@ export const getBooksByCategoryBySub = async (req, res) => {
   }
 };
 
-export const searchBook = async (req, res) => {
+export const searchBook = async (req, res, next) => {
   try {
     const { query } = req.query;
     if (!query) {
@@ -101,7 +101,7 @@ export const searchBook = async (req, res) => {
   }
 };
 
-export const addBook = async (req, res) => {
+export const addBook = async (req, res, next) => {
   try {
     const newBook = req.body;
     const createdBook = await BookModel.addBook(newBook);

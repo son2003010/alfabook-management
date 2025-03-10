@@ -10,6 +10,7 @@ import publisherRoutes from './src/routes/publisherRoutes.js';
 import authorRoutes from './src/routes/authorRoutes.js';
 import promotionRoutes from './src/routes/promotionRoutes.js';
 import salesRoutes from './src/routes/salesRoutes.js';
+import chatRoutes from './src/routes/chatRoutes.js'
 
 import { errorHandler } from './src/middleware/errorHandler.js';
 
@@ -30,7 +31,7 @@ app.use('/api', publisherRoutes);
 app.use('/api', authorRoutes);
 app.use('/api', promotionRoutes);
 app.use('/api', salesRoutes);
-
+app.use('/api', chatRoutes);
 app.use(errorHandler);
 
 const PORT = process.env.PORT;

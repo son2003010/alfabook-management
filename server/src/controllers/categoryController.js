@@ -1,6 +1,6 @@
 import CategoryModel from '../models/categoryModel.js';
 
-export const getCategory = async (req, res) => {
+export const getCategory = async (req, res, next) => {
   try {
     const { categoryId } = req.params;
 
@@ -10,7 +10,7 @@ export const getCategory = async (req, res) => {
     next(err);
   }
 };
-export const getCategoryNoId = async (req, res) => {
+export const getCategoryNoId = async (req, res, next) => {
   try {
     const categorys = await CategoryModel.getCategory();
     res.status(200).json(categorys);
@@ -18,7 +18,7 @@ export const getCategoryNoId = async (req, res) => {
     next(err);
   }
 };
-export const addCategory = async (req, res) => {
+export const addCategory = async (req, res, next) => {
   try {
     const { categoryName } = req.body;
     
@@ -32,7 +32,7 @@ export const addCategory = async (req, res) => {
     next(err);
   }
 };
-export const deleteCategory = async (req, res) => {
+export const deleteCategory = async (req, res, next) => {
   const { id } = req.params;
   try {
     await CategoryModel.deleteCategory(id);

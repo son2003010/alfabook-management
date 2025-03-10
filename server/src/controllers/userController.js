@@ -13,7 +13,7 @@ const isValidEmail = (email) => {
 };
 const passwordRegex = /^(?=.*[A-Z])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
 
-export const sendRegistrationOTP = async (req, res) => {
+export const sendRegistrationOTP = async (req, res, next) => {
   const { email } = req.body;
   if (!isValidEmail(email)) {
     return res
@@ -55,7 +55,7 @@ export const sendRegistrationOTP = async (req, res) => {
   }
 };
 
-export const verifyOTP = async (req, res) => {
+export const verifyOTP = async (req, res, next) => {
   const { email, otp } = req.body;
 
   try {
@@ -78,7 +78,7 @@ export const verifyOTP = async (req, res) => {
   }
 };
 
-export const registerUser = async (req, res) => {
+export const registerUser = async (req, res, next) => {
   const { email, password } = req.body;
   console.log('Password received:', password, 'Type:', typeof password);
 
@@ -116,7 +116,7 @@ export const registerUser = async (req, res) => {
   }
 };
 
-export const loginUser = async (req, res) => {
+export const loginUser = async (req, res, next) => {
   const { email, password } = req.body;
   if (!isValidEmail(email)) {
     return res
@@ -306,7 +306,7 @@ export const logoutAdmin = async (req, res, next) => {
   }
 };
 
-export const getUsers = async (req, res) => {
+export const getUsers = async (req, res, next) => {
   try {
     let { page, limit } = req.query;
     page = parseInt(page) || 1; // Chuyển đổi sang số
@@ -319,7 +319,7 @@ export const getUsers = async (req, res) => {
   }
 };
 
-export const sendResetPasswordOTP = async (req, res) => {
+export const sendResetPasswordOTP = async (req, res, next) => {
   const { email } = req.body;
 
   try {
@@ -353,7 +353,7 @@ export const sendResetPasswordOTP = async (req, res) => {
   }
 };
 
-export const verifyResetPasswordOTP = async (req, res) => {
+export const verifyResetPasswordOTP = async (req, res, next) => {
   const { email, otp } = req.body;
 
   try {
@@ -379,7 +379,7 @@ export const verifyResetPasswordOTP = async (req, res) => {
   }
 };
 
-export const resetPassword = async (req, res) => {
+export const resetPassword = async (req, res, next) => {
   const { email, newPassword } = req.body;
 
   try {
@@ -413,7 +413,7 @@ export const resetPassword = async (req, res) => {
     next(err);
   }
 };
-export const searchUser = async (req, res) => {
+export const searchUser = async (req, res, next) => {
   try {
     const { query } = req.query;
     if (!query) {
